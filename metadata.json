@@ -1,0 +1,8 @@
+{
+  "name": "Bella Cosa Venue -Facility Operations Management ",
+  "description": "Professional maintenance and facility management system for Bella Cosa venue, featuring Work Order tracking, PM Planning, and executive reporting.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
