@@ -84,6 +84,7 @@ export const App = () => {
   const [isInventoryModalOpen, setIsInventoryModalOpen] = useState(false);
   const [selectedDateAction, setSelectedDateAction] = useState<string | null>(null);
   const [editingOrder, setEditingOrder] = useState<WorkOrder | null>(null);
+  const [editingInventoryItem, setEditingInventoryItem] = useState<InventoryItem | null>(null);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   
   // --- DATA STATE ---
@@ -172,6 +173,21 @@ export const App = () => {
     setEditingOrder(null);
   };
 
+  const handleUpdateInventory = (id: string, updatedFields: Partial<InventoryItem>) => {
+    setInventoryItems(prev => prev.map(item => {
+      if (item.id === id) {
+        const newItem = { ...item, ...updatedFields };
+        const stock = newItem.stock;
+        const min = newItem.minStock;
+        newItem.status = stock === 0 ? 'Out of Stock' : (stock <= min ? 'Low Stock' : 'In Stock');
+        return newItem;
+      }
+      return item;
+    }));
+    triggerSuccess();
+    setEditingInventoryItem(null);
+  };
+
   const handlePasscodeEntry = (num: string) => {
     if (passcode.length >= 4) return;
     const newPass = passcode + num;
@@ -229,7 +245,6 @@ export const App = () => {
             </div>
           </button>
         </div>
-        <div className="pt-8 border-t border-white/5 w-full"><p className="text-slate-500 text-[9px] uppercase tracking-[0.3em] font-black opacity-40 italic">Venetian Bay Maintenance System</p></div>
       </div>
     </div>
   );
@@ -295,7 +310,7 @@ export const App = () => {
 
         <main className="flex-1 overflow-y-auto p-5 lg:p-10 bg-slate-50/50 no-scrollbar pb-[140px] lg:pb-10 print:bg-white print:p-0">
           {activeTab === 'Work Orders' && <WorkOrdersView reports={reports} handleEditOrder={(r: WorkOrder) => { setReports(prev => prev.map(order => order.id === r.id ? { ...order, viewed: true } : order)); setEditingOrder(r); }} />}
-          {activeTab === 'Inventory' && <InventoryView inventoryItems={inventoryItems} />}
+          {activeTab === 'Inventory' && <InventoryView inventoryItems={inventoryItems} onEdit={(item) => setEditingInventoryItem(item)} />}
           {activeTab === 'PM Planner' && <PMPlannerView pmTasks={pmTasks} />}
           {activeTab === 'Calendar' && <CalendarView currentDate={currentDate} setCurrentDate={setCurrentDate} noWeddingDays={noWeddingDays} reports={reports} pmTasks={pmTasks} setSelectedDateAction={setSelectedDateAction} />}
           {activeTab === 'GM Report' && <div id="report-printable"><GMReportView reports={reports} currentDate={currentDate} onOpenShare={() => setIsShareModalOpen(true)} /></div>}
@@ -365,6 +380,7 @@ export const App = () => {
       {isPMModalOpen && <CreatePMModal onClose={() => setIsPMModalOpen(false)} onSubmit={(data: any) => { setPmTasks(prev => [...prev, { ...data, id: `PM-${pmTasks.length + 2401}`, status: 'Upcoming' }]); triggerSuccess(); setIsPMModalOpen(false); }} />}
       {isInventoryModalOpen && <AddInventoryModal onClose={() => setIsInventoryModalOpen(false)} onSubmit={(data: any) => { setInventoryItems(prev => [...prev, { ...data, id: `INV-${inventoryItems.length + 1}`, status: 'In Stock', minStock: 5 }]); triggerSuccess(); setIsInventoryModalOpen(false); }} />}
       {editingOrder && <ManageOrderModal order={editingOrder} onClose={() => setEditingOrder(null)} onUpdate={handleUpdateReport} onTranslate={handleTranslate} isTranslating={isTranslating} inventoryItems={inventoryItems} />}
+      {editingInventoryItem && <ManageInventoryModal item={editingInventoryItem} onClose={() => setEditingInventoryItem(null)} onUpdate={handleUpdateInventory} />}
       {isShareModalOpen && <ShareReportModal currentDate={currentDate} onClose={() => setIsShareModalOpen(false)} />}
       
       {selectedDateAction && (
@@ -488,21 +504,21 @@ const WorkOrdersView = ({ reports, handleEditOrder }: { reports: WorkOrder[], ha
   );
 };
 
-const InventoryView = ({ inventoryItems }: { inventoryItems: InventoryItem[] }) => (
+const InventoryView = ({ inventoryItems, onEdit }: { inventoryItems: InventoryItem[], onEdit: (item: InventoryItem) => void }) => (
   <div className="w-full space-y-6 max-w-7xl mx-auto animate-in fade-in duration-500">
     <div className="hidden lg:block bg-white rounded-[3rem] border border-slate-100 shadow-xl overflow-hidden">
        <table className="w-full text-left table-fixed">
          <thead className="bg-slate-50 border-b text-[10px] font-black uppercase text-slate-400 tracking-[0.2em]"><tr><th className="px-10 py-7 w-[40%]">Asset / Item</th><th className="px-10 py-7 w-[20%]">Category</th><th className="px-10 py-7 w-[20%] text-center">Available Stock</th><th className="px-10 py-7 w-[20%] text-right">Health Status</th></tr></thead>
          <tbody>
            {inventoryItems.map((i: InventoryItem) => (
-             <tr key={i.id} className="border-b border-slate-50 hover:bg-slate-50 transition-all"><td className="px-10 py-7 font-black uppercase text-sm tracking-tight">{i.name}</td><td className="px-10 py-7 text-[10px] font-bold uppercase text-slate-500 tracking-widest">{i.category}</td><td className="px-10 py-7 text-center"><span className="text-xl font-black">{i.stock}</span> <span className="text-[10px] font-bold uppercase text-slate-400">{i.unit}</span></td><td className="px-10 py-7 text-right"><span className={`px-5 py-2.5 rounded-full text-[10px] font-black uppercase shadow-sm ${i.status === 'Low Stock' ? 'bg-amber-50 text-amber-600 border border-amber-100' : (i.status === 'Out of Stock' ? 'bg-rose-50 text-rose-600 border border-rose-100' : 'bg-emerald-50 text-emerald-600 border border-emerald-100')}`}>{i.status}</span></td></tr>
+             <tr key={i.id} onClick={() => onEdit(i)} className="border-b border-slate-50 hover:bg-slate-50 transition-all cursor-pointer"><td className="px-10 py-7 font-black uppercase text-sm tracking-tight">{i.name}</td><td className="px-10 py-7 text-[10px] font-bold uppercase text-slate-500 tracking-widest">{i.category}</td><td className="px-10 py-7 text-center"><span className="text-xl font-black">{i.stock}</span> <span className="text-[10px] font-bold uppercase text-slate-400">{i.unit}</span></td><td className="px-10 py-7 text-right"><span className={`px-5 py-2.5 rounded-full text-[10px] font-black uppercase shadow-sm ${i.status === 'Low Stock' ? 'bg-amber-50 text-amber-600 border border-amber-100' : (i.status === 'Out of Stock' ? 'bg-rose-50 text-rose-600 border border-rose-100' : 'bg-emerald-50 text-emerald-600 border border-emerald-100')}`}>{i.status}</span></td></tr>
            ))}
          </tbody>
        </table>
     </div>
     <div className="lg:hidden space-y-4">
       {inventoryItems.map((item: InventoryItem) => (
-        <div key={item.id} className="bg-white p-6 rounded-[2.5rem] border border-slate-200 shadow-sm flex justify-between items-center"><div className="space-y-1.5 min-w-0"><h4 className="text-sm font-black uppercase text-slate-900 tracking-tight">{item.name}</h4><p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">{item.category}</p><p className="text-[14px] font-black text-slate-900 pt-1 leading-none">{item.stock} {item.unit}</p></div><span className={`px-4 py-2 rounded-full text-[9px] font-black uppercase shrink-0 shadow-sm ${item.status === 'Low Stock' ? 'bg-amber-50 text-amber-600' : (item.status === 'Out of Stock' ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600')}`}>{item.status}</span></div>
+        <div key={item.id} onClick={() => onEdit(item)} className="bg-white p-6 rounded-[2.5rem] border border-slate-200 shadow-sm flex justify-between items-center active:bg-slate-50 transition-all cursor-pointer"><div className="space-y-1.5 min-w-0"><h4 className="text-sm font-black uppercase text-slate-900 tracking-tight">{item.name}</h4><p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">{item.category}</p><p className="text-[14px] font-black text-slate-900 pt-1 leading-none">{item.stock} {item.unit}</p></div><span className={`px-4 py-2 rounded-full text-[9px] font-black uppercase shrink-0 shadow-sm ${item.status === 'Low Stock' ? 'bg-amber-50 text-amber-600' : (item.status === 'Out of Stock' ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600')}`}>{item.status}</span></div>
       ))}
     </div>
   </div>
@@ -577,7 +593,7 @@ const CalendarView = ({ currentDate, setCurrentDate, noWeddingDays, reports, pmT
 
       cells.push(
         <div key={d} onClick={() => setSelectedDateAction(dateStr)} className="h-32 sm:h-40 border-r border-b border-slate-100 p-4 hover:bg-blue-50/30 cursor-pointer relative transition-all text-slate-900 overflow-hidden group">
-          <span className={`text-sm font-black ${isToday ? 'bg-blue-600 text-white w-8 h-8 flex items-center justify-center rounded-full shadow-lg' : 'text-slate-300'}`}>{d}</span>
+          <span className={`text-sm font-black ${isToday ? 'bg-blue-600 text-white w-8 h-8 flex items-center justify-center rounded-full shadow-lg shadow-blue-200' : 'text-slate-300'}`}>{d}</span>
           <div className="mt-3 space-y-1.5">
             {isNoWedding && <div className="bg-emerald-500 text-white text-[9px] font-black p-2 rounded-xl uppercase flex items-center gap-1.5 shadow-md"><CheckCircle2 className="w-3 h-3" /> AVAILABLE</div>}
             {dayPMs.map((p: any, i: number) => <div key={i} className="bg-amber-100 text-amber-700 text-[8px] font-black p-2 rounded-lg uppercase truncate border border-amber-200/50">PM: {p.system}</div>)}
@@ -594,9 +610,9 @@ const CalendarView = ({ currentDate, setCurrentDate, noWeddingDays, reports, pmT
       <div className="p-10 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10">
         <div className="flex items-center gap-8">
           <h3 className="text-3xl font-black uppercase tracking-tighter leading-none">{monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}</h3>
-          <div className="flex bg-slate-50 rounded-[1.5rem] p-1.5 border border-slate-100">
-            <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))} className="p-3 hover:bg-white rounded-xl transition-all text-slate-400 shadow-sm"><ChevronLeft className="w-6 h-6" /></button>
-            <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))} className="p-3 hover:bg-white rounded-xl transition-all text-slate-400 shadow-sm"><ChevronRight className="w-6 h-6" /></button>
+          <div className="flex bg-slate-50 rounded-[1.5rem] p-1.5 border border-slate-100 shadow-inner">
+            <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))} className="p-3 hover:bg-white rounded-xl transition-all text-slate-400 hover:text-blue-600 shadow-sm"><ChevronLeft className="w-6 h-6" /></button>
+            <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))} className="p-3 hover:bg-white rounded-xl transition-all text-slate-400 hover:text-blue-600 shadow-sm"><ChevronRight className="w-6 h-6" /></button>
           </div>
         </div>
       </div>
@@ -720,6 +736,26 @@ const AddInventoryModal = ({ onClose, onSubmit }: { onClose: () => void, onSubmi
             <div className="space-y-3"><label className="text-[11px] font-black uppercase text-slate-400 tracking-[0.4em]">Unit Type</label><select className="w-full p-6 rounded-[1.8rem] bg-slate-50 border-2 border-slate-100 text-sm font-bold outline-none" value={form.unit} onChange={e => setForm({...form, unit: e.target.value})}><option value="pcs">pcs</option><option value="boxes">boxes</option><option value="gallons">gallons</option></select></div>
           </div>
           <button onClick={() => onSubmit(form)} disabled={!form.name} className="w-full py-7 rounded-[2.5rem] font-black text-[12px] uppercase tracking-[0.5em] bg-blue-600 text-white shadow-2xl active:scale-95 mt-4">Initialize Asset</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const ManageInventoryModal = ({ item, onClose, onUpdate }: { item: InventoryItem, onClose: () => void, onUpdate: (id: string, d: Partial<InventoryItem>) => void }) => {
+  const [form, setForm] = useState({ name: item.name, category: item.category, stock: item.stock, minStock: item.minStock, unit: item.unit });
+  return (
+    <div className="fixed inset-0 z-[200] flex items-end lg:items-center justify-center bg-[#0B1120]/95 backdrop-blur-xl p-4 animate-in slide-in-from-bottom duration-300 print:hidden">
+      <div className="bg-white rounded-[3rem] lg:rounded-[4rem] w-full max-w-xl shadow-2xl p-10 lg:p-16 mb-4 border border-slate-100">
+        <div className="flex justify-between items-start mb-12 shrink-0"><div><h2 className="text-4xl font-black uppercase tracking-tighter text-slate-900 leading-none tracking-tight">Edit Material</h2></div><button onClick={onClose} className="p-4 bg-slate-50 rounded-2xl active:scale-90"><X className="w-7 h-7" /></button></div>
+        <div className="space-y-8 pb-8">
+          <div className="space-y-3"><label className="text-[11px] font-black uppercase text-slate-400 tracking-[0.4em]">Item Name</label><input className="w-full p-6 rounded-[1.8rem] bg-slate-50 border-2 border-slate-100 text-base font-bold outline-none focus:border-blue-500" value={form.name} onChange={e => setForm({...form, name: e.target.value})} /></div>
+          <div className="grid grid-cols-2 gap-8">
+            <div className="space-y-3"><label className="text-[11px] font-black uppercase text-slate-400 tracking-[0.4em]">Stock Level</label><input type="number" className="w-full p-6 rounded-[1.8rem] bg-slate-50 border-2 border-slate-100 text-sm font-bold outline-none" value={form.stock} onChange={e => setForm({...form, stock: parseInt(e.target.value) || 0})} /></div>
+            <div className="space-y-3"><label className="text-[11px] font-black uppercase text-slate-400 tracking-[0.4em]">Min Stock Alert</label><input type="number" className="w-full p-6 rounded-[1.8rem] bg-slate-50 border-2 border-slate-100 text-sm font-bold outline-none" value={form.minStock} onChange={e => setForm({...form, minStock: parseInt(e.target.value) || 0})} /></div>
+          </div>
+          <div className="space-y-3"><label className="text-[11px] font-black uppercase text-slate-400 tracking-[0.4em]">Category</label><select className="w-full p-6 rounded-[1.8rem] bg-slate-50 border-2 border-slate-100 text-sm font-bold outline-none" value={form.category} onChange={e => setForm({...form, category: e.target.value})}>{SYSTEMS.map(s => <option key={s} value={s}>{s}</option>)}</select></div>
+          <button onClick={() => onUpdate(item.id, form)} className="w-full py-7 rounded-[2.5rem] font-black text-[12px] uppercase tracking-[0.5em] bg-blue-600 text-white shadow-2xl active:scale-95 mt-4">Save Changes</button>
         </div>
       </div>
     </div>
