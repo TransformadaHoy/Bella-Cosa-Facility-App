@@ -1,11 +1,10 @@
-
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { 
   ClipboardList, ShieldCheck, ChevronRight, Building2, Send, ArrowLeft,
   LayoutDashboard, Plus, X, Camera, CalendarDays, FileBarChart, 
   Printer, Edit3, Languages, Loader2, CheckCircle2, Box, ChevronLeft,
   Info, Wrench, Activity, LogOut, ShoppingCart, Trash2, Minus, PlusCircle, 
-  Mail, Share2, Download, Lock, Settings, QrCode
+  Mail, Share2, Download, Lock, Settings, QrCode, Delete
 } from 'lucide-react';
 import { GoogleGenAI } from "@google/genai";
 
@@ -62,7 +61,16 @@ const LOCATIONS = [
   "Room 4", "Room 5", "Room 6", "Room 7", "Room 8", "Room 9", "Room 10", 
   "Room 11", "Housekeeping"
 ];
-const SYSTEMS = ["Plumbing", "HVAC", "Electrical", "Carpentry/Finishes", "Flooring", "Restrooms", "Life Safety", "Pest Control", "Housekeeping Support", "Exterior/Structural", "Interior walls repair/painting", "Ceiling", "Washer", "Dryer", "Other"];
+
+const SYSTEMS = [
+  "Plumbing", "HVAC", "Electrical", "Carpentry/Finishes", "Flooring", 
+  "Restrooms", "Life Safety", "Pest Control", "Housekeeping Support", 
+  "Exterior/Structural", "Interior walls repair/painting", "Ceiling", 
+  "Washer", "Dryer", "lights", "lamp", "ceiling fan", "door lock", 
+  "Window", "vertical blinda", "shower", "sink", "Toilet", "sofa bed", 
+  "caulking", "Other"
+];
+
 const PROPERTY_MANAGER = "Carlos Velez";
 const MASTER_PASSCODE = "0612";
 
@@ -121,7 +129,7 @@ const PasscodePage = ({
       {['1', '2', '3', '4', '5', '6', '7', '8', '9'].map(num => (<button key={num} onClick={() => handlePasscodeEntry(num)} className="h-24 bg-slate-800/40 hover:bg-slate-700 active:bg-slate-600 rounded-3xl text-3xl font-black active:scale-90 transition-all border border-slate-700/50 shadow-lg">{num}</button>))}
       <button onClick={() => setView('landing')} className="h-24 flex items-center justify-center text-slate-500 active:scale-90 transition-all"><ArrowLeft className="w-10 h-10" /></button>
       <button onClick={() => handlePasscodeEntry('0')} className="h-24 bg-slate-800/40 hover:bg-slate-700 active:bg-slate-600 rounded-3xl text-3xl font-black active:scale-90 transition-all border border-slate-700/50 shadow-lg">0</button>
-      <button onClick={() => setPasscode(passcode.slice(0, -1))} className="h-24 flex items-center justify-center text-slate-500 active:scale-90 transition-all"><X className="w-10 h-10" /></button>
+      <button onClick={() => setPasscode(passcode.slice(0, -1))} className="h-24 flex items-center justify-center text-slate-500 active:scale-90 transition-all"><Delete className="w-10 h-10" /></button>
     </div>
   </div>
 );
@@ -165,8 +173,6 @@ const StaffPortal = ({ setView, onAddReport }: { setView: (v: any) => void, onAd
   );
 };
 
-// --- MODALS ---
-
 const ManageInventoryModal = ({ item, onClose, onUpdate }: { item: InventoryItem, onClose: () => void, onUpdate: (id: string, d: Partial<InventoryItem>) => void }) => {
   const [form, setForm] = useState({ name: item.name, category: item.category, stock: item.stock, minStock: item.minStock, unit: item.unit });
   return (
@@ -186,8 +192,6 @@ const ManageInventoryModal = ({ item, onClose, onUpdate }: { item: InventoryItem
     </div>
   );
 };
-
-// --- FIX: ADDED MISSING MODAL COMPONENTS ---
 
 const CreateWorkOrderModal = ({ onClose, onSubmit }: { onClose: () => void, onSubmit: (d: Partial<WorkOrder>) => void }) => {
   const [formData, setFormData] = useState({ title: '', location: LOCATIONS[0], system: SYSTEMS[0], priority: 'Medium' as Priority, dueDate: toISODate(new Date()), image: null as string | null });
@@ -235,7 +239,7 @@ const CreatePMModal = ({ onClose, onSubmit }: { onClose: () => void, onSubmit: (
 };
 
 const AddInventoryModal = ({ onClose, onSubmit }: { onClose: () => void, onSubmit: (d: any) => void }) => {
-  const [formData, setFormData] = useState({ name: '', category: SYSTEMS[0], stock: 0, unit: 'pcs' });
+  const [formData, setFormData] = useState({ name: '', category: SYSTEMS[0], stock: 0, minStock: 5, unit: 'pcs' });
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-[#0B1120]/95 backdrop-blur-xl p-4 font-sans text-slate-900">
       <div className="bg-white rounded-[3rem] w-full max-w-xl shadow-2xl p-10 overflow-y-auto max-h-[90vh]">
@@ -317,8 +321,6 @@ const ManageOrderModal = ({
     </div>
   );
 };
-
-// --- FIX: ADDED MISSING VIEW COMPONENTS ---
 
 const WorkOrdersView = ({ reports, handleEditOrder }: { reports: WorkOrder[], handleEditOrder: (r: WorkOrder) => void }) => (
   <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden text-slate-900">
@@ -460,14 +462,110 @@ const SettingsView = ({ onShare }: { onShare: () => void }) => (
       <div className="space-y-3">
         <button onClick={onShare} className="w-full p-6 bg-slate-50 hover:bg-slate-100 rounded-2xl flex items-center justify-between transition-all group border border-slate-100"><div className="flex items-center gap-4"><Share2 className="w-5 h-5 text-emerald-500" /><div className="text-left"><p className="text-xs font-black uppercase text-slate-900">Share with Team</p><p className="text-[9px] font-bold text-slate-400 uppercase mt-0.5">Allow staff to report incidents</p></div></div><ChevronRight className="w-5 h-5 text-slate-300 group-hover:text-slate-600" /></button>
         <button className="w-full p-6 bg-slate-50 hover:bg-slate-100 rounded-2xl flex items-center justify-between transition-all group border border-slate-100"><div className="flex items-center gap-4"><QrCode className="w-5 h-5 text-blue-500" /><div className="text-left"><p className="text-xs font-black uppercase text-slate-900">Portal QR Code</p><p className="text-[9px] font-bold text-slate-400 uppercase mt-0.5">Physical posting for reporting</p></div></div><ChevronRight className="w-5 h-5 text-slate-300 group-hover:text-slate-600" /></button>
-        <button className="w-full p-6 bg-rose-50 hover:bg-rose-100 rounded-2xl flex items-center justify-between transition-all group border border-rose-100"><div className="flex items-center gap-4"><Trash2 className="w-5 h-5 text-rose-500" /><div className="text-left"><p className="text-xs font-black uppercase text-rose-600">Flush Cache</p><p className="text-[9px] font-bold text-rose-400 uppercase mt-0.5">Reset all local storage data</p></div></div><ChevronRight className="w-5 h-5 text-rose-300 group-hover:text-rose-600" /></button>
+        <button className="w-full p-6 bg-rose-50 hover:bg-rose-100 rounded-2xl flex items-center justify-between transition-all group border border-rose-100" onClick={() => { if(confirm('Clear all local data?')) { localStorage.clear(); window.location.reload(); }}}><div className="flex items-center gap-4"><Trash2 className="w-5 h-5 text-rose-500" /><div className="text-left"><p className="text-xs font-black uppercase text-rose-600">Flush Cache</p><p className="text-[9px] font-bold text-rose-400 uppercase mt-0.5">Reset all local storage data</p></div></div><ChevronRight className="w-5 h-5 text-rose-300 group-hover:text-rose-600" /></button>
       </div>
     </div>
     <div className="text-center py-6"><p className="text-[9px] font-black uppercase text-slate-300 tracking-[0.4em]">Facility Management v2.4.0 • Synchronized</p></div>
   </div>
 );
 
-// --- MAIN APP ---
+const DaySchedulerModal = ({ 
+  selectedDateAction, noWeddingDays, setNoWeddingDays, onClose 
+}: { 
+  selectedDateAction: string, noWeddingDays: string[], setNoWeddingDays: (d: any) => void, onClose: () => void 
+}) => (
+  <div className="fixed inset-0 z-[200] flex items-end lg:items-center justify-center bg-[#0B1120]/80 backdrop-blur-md p-4 animate-in fade-in duration-300">
+    <div className="bg-white rounded-[2.5rem] lg:rounded-[3.5rem] w-full max-w-lg shadow-2xl p-8 border border-slate-100 mb-20 lg:mb-0 max-h-[90vh] overflow-y-auto no-scrollbar">
+      <div className="flex justify-between items-center mb-6"><h4 className="text-2xl font-black uppercase text-slate-900 tracking-tighter">Day Scheduler</h4><button onClick={onClose} className="p-2 text-slate-400 hover:text-rose-500 rounded-xl bg-slate-50"><X className="w-6 h-6" /></button></div>
+      <div className="space-y-6">
+        <div className="p-6 bg-slate-50 rounded-[2rem] border border-slate-100"><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Selected Operations Date</p><p className="text-lg font-black text-blue-600 uppercase">{selectedDateAction}</p></div>
+        <div className="flex items-center justify-between p-6 bg-white border-2 border-slate-50 rounded-[2.5rem] shadow-sm">
+          <div className="flex items-center gap-4"><div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${noWeddingDays.includes(selectedDateAction) ? 'bg-emerald-500 text-white shadow-lg' : 'bg-slate-100 text-slate-400'}`}><CheckCircle2 className="w-6 h-6" /></div><div><p className="text-xs font-black uppercase text-slate-900">No Wedding</p><p className="text-[9px] font-bold text-slate-400 uppercase mt-0.5">Facility Window Open</p></div></div>
+          <button onClick={() => setNoWeddingDays((prev: string[]) => prev.includes(selectedDateAction) ? prev.filter(d => d !== selectedDateAction) : [...prev, selectedDateAction])} className={`w-14 h-8 rounded-full relative transition-all ${noWeddingDays.includes(selectedDateAction) ? 'bg-emerald-500' : 'bg-slate-200'}`}><div className={`absolute top-1 w-6 h-6 bg-white rounded-full shadow-md transition-all ${noWeddingDays.includes(selectedDateAction) ? 'left-[26px]' : 'left-1'}`}></div></button>
+        </div>
+        <button onClick={onClose} className="w-full py-6 rounded-[1.8rem] bg-slate-900 text-white font-black text-[10px] uppercase tracking-widest active:scale-95 shadow-xl transition-all">Update Calendar</button>
+      </div>
+    </div>
+  </div>
+);
+
+const ManagerConsoleView = ({ 
+  activeTab, setActiveTab, unreadCount, lowStockCount, handleShareApp, setView,
+  reports, pmTasks, inventoryItems, currentDate, setCurrentDate, noWeddingDays,
+  setEditingOrder, setEditingInventoryItem, setIsShareModalOpen,
+  setIsCreateModalOpen, setIsPMModalOpen, setIsInventoryModalOpen, setSelectedDateAction
+}: any) => (
+  <div className="h-full flex flex-col lg:flex-row bg-slate-50 overflow-hidden relative">
+    <aside className="hidden lg:flex w-80 bg-[#0B1120] text-white flex-col p-8 gap-8 shrink-0 relative z-30 shadow-2xl border-r border-slate-800 overflow-y-auto no-scrollbar print:hidden">
+      <div className="flex flex-col gap-4 py-4 border-b border-slate-800 w-full shrink-0">
+        <div className="bg-blue-600 p-3 rounded-2xl w-fit shadow-lg shadow-blue-500/20"><Building2 className="w-8 h-8 text-white" /></div>
+        <div><h1 className="text-2xl font-serif tracking-[0.1em] uppercase leading-none">Bella Cosa</h1><p className="text-[8px] text-blue-400 font-black tracking-[0.5em] uppercase mt-2 opacity-80">Ops Console</p></div>
+      </div>
+      <nav className="flex-1 space-y-2">
+        {[{ icon: LayoutDashboard, label: 'Work Orders', count: unreadCount, color: 'bg-rose-500' },
+          { icon: Wrench, label: 'PM Planner' },
+          { icon: Box, label: 'Inventory' },
+          { icon: ShoppingCart, label: 'Shopping List', count: lowStockCount, color: 'bg-amber-500' },
+          { icon: CalendarDays, label: 'Calendar' },
+          { icon: FileBarChart, label: 'GM Report' },
+          { icon: Settings, label: 'Settings' }].map((item) => (
+          <button key={item.label} onClick={() => setActiveTab(item.label)} className={`w-full flex items-center justify-between p-4 rounded-2xl transition-all ${activeTab === item.label ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
+            <div className="flex items-center gap-4"><item.icon className="w-5 h-5" /><span className="text-[10px] font-black uppercase tracking-[0.2em]">{item.label}</span></div>
+            {item.count && item.count > 0 && <span className={`${item.color} text-white text-[8px] font-black px-1.5 py-0.5 rounded-full min-w-[20px] text-center shadow-lg`}>{item.count}</span>}
+          </button>
+        ))}
+      </nav>
+      <div className="space-y-3">
+        <button onClick={handleShareApp} className="flex items-center gap-4 p-4 text-emerald-400 hover:bg-emerald-500/10 rounded-2xl transition-all w-full border border-emerald-500/20"><Share2 className="w-5 h-5" /><span className="text-[10px] font-black uppercase tracking-widest">Share with Staff</span></button>
+        <button onClick={() => setView('landing')} className="flex items-center gap-4 p-4 text-slate-500 hover:text-rose-400 transition-all w-full border-t border-slate-800 shrink-0"><LogOut className="w-5 h-5" /><span className="text-[10px] font-black uppercase tracking-widest">Logout</span></button>
+      </div>
+    </aside>
+
+    <div className="flex-1 flex flex-col h-full overflow-hidden relative">
+      <header className="bg-white border-b border-slate-200 px-6 py-6 lg:px-10 lg:py-8 flex items-center justify-between sticky top-0 z-20 shadow-sm shrink-0 print:hidden">
+        <div>
+          <h2 className="text-2xl lg:text-3xl font-black uppercase tracking-tighter text-slate-900 leading-none">{activeTab}</h2>
+          <div className="flex items-center gap-2 mt-2"><div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div><span className="text-[9px] font-black text-emerald-600 uppercase tracking-[0.3em]">System Online</span></div>
+        </div>
+        <div className="hidden lg:flex items-center gap-3">
+          {activeTab === 'GM Report' && <button onClick={() => setIsShareModalOpen(true)} className="bg-[#0B1120] hover:bg-slate-800 text-white px-6 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2 shadow-xl transition-all active:scale-95"><Share2 className="w-4 h-4" /> Finalize & Send</button>}
+          {!['Calendar', 'Shopping List', 'GM Report', 'Settings'].includes(activeTab) && <button onClick={() => activeTab === 'Inventory' ? setIsInventoryModalOpen(true) : activeTab === 'PM Planner' ? setIsPMModalOpen(true) : setIsCreateModalOpen(true)} className="bg-blue-600 hover:bg-blue-500 text-white px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2 shadow-xl shadow-blue-500/20 transition-all active:scale-95"><Plus className="w-5 h-5" /> Add Resource</button>}
+        </div>
+      </header>
+
+      <main className="flex-1 overflow-y-auto p-5 lg:p-10 bg-slate-50/50 no-scrollbar pb-[140px] lg:pb-10 print:bg-white print:p-0">
+        {activeTab === 'Work Orders' && <WorkOrdersView reports={reports} handleEditOrder={(r: WorkOrder) => setEditingOrder(r)} />}
+        {activeTab === 'Inventory' && <InventoryView inventoryItems={inventoryItems} onEdit={(item: InventoryItem) => setEditingInventoryItem(item)} />}
+        {activeTab === 'PM Planner' && <PMPlannerView pmTasks={pmTasks} />}
+        {activeTab === 'Calendar' && <CalendarView currentDate={currentDate} setCurrentDate={setCurrentDate} noWeddingDays={noWeddingDays} reports={reports} pmTasks={pmTasks} setSelectedDateAction={setSelectedDateAction} />}
+        {activeTab === 'GM Report' && <div id="report-printable"><GMReportView reports={reports} currentDate={currentDate} onOpenShare={() => setIsShareModalOpen(true)} /></div>}
+        {activeTab === 'Shopping List' && <ShoppingListView inventoryItems={inventoryItems} />}
+        {activeTab === 'Settings' && <SettingsView onShare={handleShareApp} />}
+      </main>
+    </div>
+
+    <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 z-[100] flex justify-around items-center p-4 pb-[calc(16px+env(safe-area-inset-bottom))] print:hidden shadow-[0_-8px_30px_rgba(0,0,0,0.04)]">
+      {[{ icon: LayoutDashboard, label: 'Orders', tab: 'Work Orders' }, { icon: Box, label: 'Stock', tab: 'Inventory' }, { icon: CalendarDays, label: 'Calendar', tab: 'Calendar' }, { icon: Settings, label: 'More', tab: 'Settings' }].map((item) => (
+        <button key={item.label} onClick={() => setActiveTab(item.tab)} className="flex flex-col items-center gap-1.5 transition-all relative px-3">
+          <div className="relative"><item.icon className={`w-6 h-6 ${activeTab === item.tab ? 'text-blue-600' : 'text-slate-400'}`} />{item.tab === 'Work Orders' && unreadCount > 0 && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-rose-500 border-2 border-white rounded-full"></span>}</div>
+          <span className={`text-[8px] font-black uppercase tracking-widest ${activeTab === item.tab ? 'text-blue-600' : 'text-slate-400'}`}>{item.label}</span>
+        </button>
+      ))}
+      <button onClick={() => setIsCreateModalOpen(true)} className="bg-blue-600 text-white p-4 rounded-[1.5rem] -mt-12 shadow-2xl shadow-blue-500/40 active:scale-90 border-4 border-slate-50"><Plus className="w-8 h-8" /></button>
+    </nav>
+  </div>
+);
+
+const SuccessToast = () => (
+  <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in zoom-in duration-300">
+    <div className="bg-white rounded-[3.5rem] p-12 flex flex-col items-center gap-6 shadow-2xl border border-white/50 animate-bounce">
+      <div className="bg-emerald-500 p-6 rounded-full text-white shadow-xl shadow-emerald-500/20"><CheckCircle2 className="w-14 h-14" /></div>
+      <div className="text-center"><h3 className="text-3xl font-black uppercase tracking-tighter text-slate-900 leading-none">Profile Updated</h3><p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] mt-3">Hub Synchronized</p></div>
+    </div>
+  </div>
+);
+
+// --- MAIN APP COMPONENT ---
 
 export const App = () => {
   // --- UI STATE ---
@@ -653,11 +751,8 @@ export const App = () => {
           handleShareApp={handleShareApp} 
           setView={setView}
           reports={reports}
-          setReports={setReports}
           pmTasks={pmTasks}
-          setPmTasks={setPmTasks}
           inventoryItems={inventoryItems}
-          setInventoryItems={setInventoryItems}
           currentDate={currentDate}
           setCurrentDate={setCurrentDate}
           noWeddingDays={noWeddingDays}
@@ -692,101 +787,3 @@ export const App = () => {
     </div>
   );
 };
-
-// --- HELPER COMPONENTS ---
-
-const ManagerConsoleView = ({ 
-  activeTab, setActiveTab, unreadCount, lowStockCount, handleShareApp, setView,
-  reports, pmTasks, inventoryItems, currentDate, setCurrentDate, noWeddingDays,
-  setEditingOrder, setEditingInventoryItem, setIsShareModalOpen,
-  setIsCreateModalOpen, setIsPMModalOpen, setIsInventoryModalOpen, setSelectedDateAction
-}: any) => (
-  <div className="h-full flex flex-col lg:flex-row bg-slate-50 overflow-hidden relative">
-    <aside className="hidden lg:flex w-80 bg-[#0B1120] text-white flex-col p-8 gap-8 shrink-0 relative z-30 shadow-2xl border-r border-slate-800 overflow-y-auto no-scrollbar print:hidden">
-      <div className="flex flex-col gap-4 py-4 border-b border-slate-800 w-full shrink-0">
-        <div className="bg-blue-600 p-3 rounded-2xl w-fit shadow-lg shadow-blue-500/20"><Building2 className="w-8 h-8 text-white" /></div>
-        <div><h1 className="text-2xl font-serif tracking-[0.1em] uppercase leading-none">Bella Cosa</h1><p className="text-[8px] text-blue-400 font-black tracking-[0.5em] uppercase mt-2 opacity-80">Ops Console</p></div>
-      </div>
-      <nav className="flex-1 space-y-2">
-        {[{ icon: LayoutDashboard, label: 'Work Orders', count: unreadCount, color: 'bg-rose-500' },
-          { icon: Wrench, label: 'PM Planner' },
-          { icon: Box, label: 'Inventory' },
-          { icon: ShoppingCart, label: 'Shopping List', count: lowStockCount, color: 'bg-amber-500' },
-          { icon: CalendarDays, label: 'Calendar' },
-          { icon: FileBarChart, label: 'GM Report' },
-          { icon: Settings, label: 'Settings' }].map((item) => (
-          <button key={item.label} onClick={() => setActiveTab(item.label)} className={`w-full flex items-center justify-between p-4 rounded-2xl transition-all ${activeTab === item.label ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
-            <div className="flex items-center gap-4"><item.icon className="w-5 h-5" /><span className="text-[10px] font-black uppercase tracking-[0.2em]">{item.label}</span></div>
-            {item.count && item.count > 0 && <span className={`${item.color} text-white text-[8px] font-black px-1.5 py-0.5 rounded-full min-w-[20px] text-center shadow-lg`}>{item.count}</span>}
-          </button>
-        ))}
-      </nav>
-      <div className="space-y-3">
-        <button onClick={handleShareApp} className="flex items-center gap-4 p-4 text-emerald-400 hover:bg-emerald-500/10 rounded-2xl transition-all w-full border border-emerald-500/20"><Share2 className="w-5 h-5" /><span className="text-[10px] font-black uppercase tracking-widest">Share with Staff</span></button>
-        <button onClick={() => setView('landing')} className="flex items-center gap-4 p-4 text-slate-500 hover:text-rose-400 transition-all w-full border-t border-slate-800 shrink-0"><LogOut className="w-5 h-5" /><span className="text-[10px] font-black uppercase tracking-widest">Logout</span></button>
-      </div>
-    </aside>
-
-    <div className="flex-1 flex flex-col h-full overflow-hidden relative">
-      <header className="bg-white border-b border-slate-200 px-6 py-6 lg:px-10 lg:py-8 flex items-center justify-between sticky top-0 z-20 shadow-sm shrink-0 print:hidden">
-        <div>
-          <h2 className="text-2xl lg:text-3xl font-black uppercase tracking-tighter text-slate-900 leading-none">{activeTab}</h2>
-          <div className="flex items-center gap-2 mt-2"><div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div><span className="text-[9px] font-black text-emerald-600 uppercase tracking-[0.3em]">System Online</span></div>
-        </div>
-        <div className="hidden lg:flex items-center gap-3">
-          {activeTab === 'GM Report' && <button onClick={() => setIsShareModalOpen(true)} className="bg-[#0B1120] hover:bg-slate-800 text-white px-6 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2 shadow-xl transition-all active:scale-95"><Share2 className="w-4 h-4" /> Finalize & Send</button>}
-          {!['Calendar', 'Shopping List', 'GM Report', 'Settings'].includes(activeTab) && <button onClick={() => activeTab === 'Inventory' ? setIsInventoryModalOpen(true) : activeTab === 'PM Planner' ? setIsPMModalOpen(true) : setIsCreateModalOpen(true)} className="bg-blue-600 hover:bg-blue-500 text-white px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2 shadow-xl shadow-blue-500/20 transition-all active:scale-95"><Plus className="w-5 h-5" /> Add Resource</button>}
-        </div>
-      </header>
-
-      <main className="flex-1 overflow-y-auto p-5 lg:p-10 bg-slate-50/50 no-scrollbar pb-[140px] lg:pb-10 print:bg-white print:p-0">
-        {activeTab === 'Work Orders' && <WorkOrdersView reports={reports} handleEditOrder={(r: WorkOrder) => setEditingOrder(r)} />}
-        {activeTab === 'Inventory' && <InventoryView inventoryItems={inventoryItems} onEdit={(item: InventoryItem) => setEditingInventoryItem(item)} />}
-        {activeTab === 'PM Planner' && <PMPlannerView pmTasks={pmTasks} />}
-        {activeTab === 'Calendar' && <CalendarView currentDate={currentDate} setCurrentDate={setCurrentDate} noWeddingDays={noWeddingDays} reports={reports} pmTasks={pmTasks} setSelectedDateAction={setSelectedDateAction} />}
-        {activeTab === 'GM Report' && <div id="report-printable"><GMReportView reports={reports} currentDate={currentDate} onOpenShare={() => setIsShareModalOpen(true)} /></div>}
-        {activeTab === 'Shopping List' && <ShoppingListView inventoryItems={inventoryItems} />}
-        {activeTab === 'Settings' && <SettingsView onShare={handleShareApp} />}
-      </main>
-    </div>
-
-    <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 z-[100] flex justify-around items-center p-4 pb-[calc(16px+env(safe-area-inset-bottom))] print:hidden shadow-[0_-8px_30px_rgba(0,0,0,0.04)]">
-      {[{ icon: LayoutDashboard, label: 'Orders', tab: 'Work Orders' }, { icon: Box, label: 'Stock', tab: 'Inventory' }, { icon: CalendarDays, label: 'Calendar', tab: 'Calendar' }, { icon: Settings, label: 'More', tab: 'Settings' }].map((item) => (
-        <button key={item.label} onClick={() => setActiveTab(item.tab)} className="flex flex-col items-center gap-1.5 transition-all relative px-3">
-          <div className="relative"><item.icon className={`w-6 h-6 ${activeTab === item.tab ? 'text-blue-600' : 'text-slate-400'}`} />{item.tab === 'Work Orders' && unreadCount > 0 && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-rose-500 border-2 border-white rounded-full"></span>}</div>
-          <span className={`text-[8px] font-black uppercase tracking-widest ${activeTab === item.tab ? 'text-blue-600' : 'text-slate-400'}`}>{item.label}</span>
-        </button>
-      ))}
-      <button onClick={() => setIsCreateModalOpen(true)} className="bg-blue-600 text-white p-4 rounded-[1.5rem] -mt-12 shadow-2xl shadow-blue-500/40 active:scale-90 border-4 border-slate-50"><Plus className="w-8 h-8" /></button>
-    </nav>
-  </div>
-);
-
-const DaySchedulerModal = ({ 
-  selectedDateAction, noWeddingDays, setNoWeddingDays, onClose 
-}: { 
-  selectedDateAction: string, noWeddingDays: string[], setNoWeddingDays: (d: any) => void, onClose: () => void 
-}) => (
-  <div className="fixed inset-0 z-[200] flex items-end lg:items-center justify-center bg-[#0B1120]/80 backdrop-blur-md p-4 animate-in fade-in duration-300">
-    <div className="bg-white rounded-[2.5rem] lg:rounded-[3.5rem] w-full max-w-lg shadow-2xl p-8 border border-slate-100 mb-20 lg:mb-0 max-h-[90vh] overflow-y-auto no-scrollbar">
-      <div className="flex justify-between items-center mb-6"><h4 className="text-2xl font-black uppercase text-slate-900 tracking-tighter">Day Scheduler</h4><button onClick={onClose} className="p-2 text-slate-400 hover:text-rose-500 rounded-xl bg-slate-50"><X className="w-6 h-6" /></button></div>
-      <div className="space-y-6">
-        <div className="p-6 bg-slate-50 rounded-[2rem] border border-slate-100"><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Selected Operations Date</p><p className="text-lg font-black text-blue-600 uppercase">{selectedDateAction}</p></div>
-        <div className="flex items-center justify-between p-6 bg-white border-2 border-slate-50 rounded-[2.5rem] shadow-sm">
-          <div className="flex items-center gap-4"><div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${noWeddingDays.includes(selectedDateAction) ? 'bg-emerald-500 text-white shadow-lg' : 'bg-slate-100 text-slate-400'}`}><CheckCircle2 className="w-6 h-6" /></div><div><p className="text-xs font-black uppercase text-slate-900">No Wedding</p><p className="text-[9px] font-bold text-slate-400 uppercase mt-0.5">Facility Window Open</p></div></div>
-          <button onClick={() => setNoWeddingDays((prev: string[]) => prev.includes(selectedDateAction) ? prev.filter(d => d !== selectedDateAction) : [...prev, selectedDateAction])} className={`w-14 h-8 rounded-full relative transition-all ${noWeddingDays.includes(selectedDateAction) ? 'bg-emerald-500' : 'bg-slate-200'}`}><div className={`absolute top-1 w-6 h-6 bg-white rounded-full shadow-md transition-all ${noWeddingDays.includes(selectedDateAction) ? 'left-[26px]' : 'left-1'}`}></div></button>
-        </div>
-        <button onClick={onClose} className="w-full py-6 rounded-[1.8rem] bg-slate-900 text-white font-black text-[10px] uppercase tracking-widest active:scale-95 shadow-xl transition-all">Update Calendar</button>
-      </div>
-    </div>
-  </div>
-);
-
-const SuccessToast = () => (
-  <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in zoom-in duration-300">
-    <div className="bg-white rounded-[3.5rem] p-12 flex flex-col items-center gap-6 shadow-2xl border border-white/50 animate-bounce">
-      <div className="bg-emerald-500 p-6 rounded-full text-white shadow-xl shadow-emerald-500/20"><CheckCircle2 className="w-14 h-14" /></div>
-      <div className="text-center"><h3 className="text-3xl font-black uppercase tracking-tighter text-slate-900 leading-none">Profile Updated</h3><p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] mt-3">Hub Synchronized</p></div>
-    </div>
-  </div>
-);
