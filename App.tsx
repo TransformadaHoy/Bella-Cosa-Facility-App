@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { 
   ClipboardList, ShieldCheck, ChevronRight, Building2, Send, ArrowLeft,
@@ -66,9 +67,9 @@ const SYSTEMS = [
   "Plumbing", "HVAC", "Electrical", "Carpentry/Finishes", "Flooring", 
   "Restrooms", "Life Safety", "Pest Control", "Housekeeping Support", 
   "Exterior/Structural", "Interior walls repair/painting", "Ceiling", 
-  "Washer", "Dryer", "lights", "lamp", "ceiling fan", "door lock", 
-  "Window", "vertical blinda", "shower", "sink", "Toilet", "sofa bed", 
-  "caulking", "Other"
+  "Washer", "Dryer", "Lights", "Lamp", "Ceiling Fan", "Door Lock", 
+  "Window", "Vertical Blinds", "Shower", "Sink", "Toilet", "Sofa Bed", 
+  "Caulking", "Other"
 ];
 
 const PROPERTY_MANAGER = "Carlos Velez";
@@ -509,6 +510,7 @@ const ManagerConsoleView = ({
           { icon: CalendarDays, label: 'Calendar' },
           { icon: FileBarChart, label: 'GM Report' },
           { icon: Settings, label: 'Settings' }].map((item) => (
+          /* Fix: Using item.label instead of item.tab as sidebar items do not have a separate tab property */
           <button key={item.label} onClick={() => setActiveTab(item.label)} className={`w-full flex items-center justify-between p-4 rounded-2xl transition-all ${activeTab === item.label ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
             <div className="flex items-center gap-4"><item.icon className="w-5 h-5" /><span className="text-[10px] font-black uppercase tracking-[0.2em]">{item.label}</span></div>
             {item.count && item.count > 0 && <span className={`${item.color} text-white text-[8px] font-black px-1.5 py-0.5 rounded-full min-w-[20px] text-center shadow-lg`}>{item.count}</span>}
@@ -634,12 +636,14 @@ export const App = () => {
     if (!text || text.trim().length < 2) return;
     setIsTranslating(true);
     try {
-      const ai = new GoogleGenAI({ apiKey: (process.env.API_KEY as string) });
+      /* Guideline: Use new GoogleGenAI({ apiKey: process.env.API_KEY }) right before calling the API */
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
         contents: `Translate this maintenance note from Spanish to professional English: "${text}"`,
         config: { temperature: 0.1 }
       });
+      /* Guideline: Extract text from response.text property */
       const translated = response.text;
       if (translated) callback(translated.trim());
     } catch (e) { console.error(e); } finally { setIsTranslating(false); }
