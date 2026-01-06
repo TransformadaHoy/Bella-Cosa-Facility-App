@@ -254,32 +254,6 @@ export const App = () => {
     </div>
   );
 
-  const SettingsView = () => (
-    <div className="max-w-3xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="bg-white rounded-[2.5rem] p-8 shadow-xl border border-slate-100">
-        <h3 className="text-2xl font-black uppercase tracking-tighter mb-6">System Management</h3>
-        <div className="space-y-4">
-          <button onClick={handleShareApp} className="w-full p-6 bg-blue-600 text-white rounded-[1.5rem] flex items-center justify-between group active:scale-98 transition-all">
-            <div className="flex items-center gap-4"><div className="bg-white/20 p-3 rounded-xl"><Share2 className="w-6 h-6" /></div><div className="text-left"><p className="text-sm font-black uppercase">Share App Link</p><p className="text-[10px] opacity-70">Send this URL to Staff members</p></div></div>
-            <ChevronRight className="w-5 h-5 opacity-40 group-hover:translate-x-1 transition-transform" />
-          </button>
-          <div className="p-6 bg-slate-50 rounded-[1.5rem] border border-slate-100 flex items-center justify-between">
-            <div className="flex items-center gap-4"><div className="bg-white p-3 rounded-xl shadow-sm text-slate-400"><Lock className="w-6 h-6" /></div><div><p className="text-sm font-black uppercase">Manager Passcode</p><p className="text-[10px] text-slate-400 uppercase tracking-widest">{MASTER_PASSCODE}</p></div></div>
-            <Info className="w-5 h-5 text-slate-300" />
-          </div>
-          <button onClick={() => { if(confirm('¿Borrar todos los reportes y ajustes?')) { localStorage.clear(); window.location.reload(); } }} className="w-full p-6 bg-rose-50 text-rose-600 rounded-[1.5rem] flex items-center justify-between group active:scale-98 transition-all border border-rose-100 mt-8">
-            <div className="flex items-center gap-4"><div className="bg-rose-100 p-3 rounded-xl"><Trash2 className="w-6 h-6" /></div><div className="text-left"><p className="text-sm font-black uppercase">Clear Local Cache</p><p className="text-[10px] opacity-70">Reset all data on this device</p></div></div>
-          </button>
-        </div>
-      </div>
-      <div className="bg-[#0B1120] text-white rounded-[2.5rem] p-10 shadow-2xl relative overflow-hidden">
-        <QrCode className="absolute -bottom-10 -right-10 w-48 h-48 opacity-5" />
-        <h4 className="text-lg font-serif italic mb-2">Cloud Sync Deployment</h4>
-        <p className="text-xs text-slate-400 leading-relaxed max-w-md">Currently using Local Storage. For multi-device real-time sync across all staff phones, connect to a Firebase/Supabase backend. Contact support for full deployment.</p>
-      </div>
-    </div>
-  );
-
   const ManagerConsole = () => (
     <div className="h-full flex flex-col lg:flex-row bg-slate-50 overflow-hidden relative">
       <aside className="hidden lg:flex w-80 bg-[#0B1120] text-white flex-col p-8 gap-8 shrink-0 relative z-30 shadow-2xl border-r border-slate-800 overflow-y-auto no-scrollbar print:hidden">
@@ -326,7 +300,7 @@ export const App = () => {
           {activeTab === 'Calendar' && <CalendarView currentDate={currentDate} setCurrentDate={setCurrentDate} noWeddingDays={noWeddingDays} reports={reports} pmTasks={pmTasks} setSelectedDateAction={setSelectedDateAction} />}
           {activeTab === 'GM Report' && <div id="report-printable"><GMReportView reports={reports} currentDate={currentDate} onOpenShare={() => setIsShareModalOpen(true)} /></div>}
           {activeTab === 'Shopping List' && <ShoppingListView inventoryItems={inventoryItems} />}
-          {activeTab === 'Settings' && <SettingsView />}
+          {activeTab === 'Settings' && <SettingsView onShare={handleShareApp} />}
         </main>
       </div>
 
@@ -356,7 +330,7 @@ export const App = () => {
         <div className="space-y-6 flex-1 pb-6 overflow-y-auto no-scrollbar">
           <div className="space-y-3">
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Describe the Problem</label>
-            <textarea rows={6} value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Example: Room 4 AC is blowing warm air or Sink is leaking in Men's Bathroom..." className="w-full p-6 rounded-[2rem] border-2 border-slate-100 bg-white text-base font-bold outline-none shadow-sm focus:border-blue-500 transition-all resize-none leading-relaxed" />
+            <textarea rows={6} value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Example: Room 4 AC is blowing warm air..." className="w-full p-6 rounded-[2rem] border-2 border-slate-100 bg-white text-base font-bold outline-none shadow-sm focus:border-blue-500 transition-all resize-none leading-relaxed" />
           </div>
           <div className="grid grid-cols-1 gap-4">
             <div className="space-y-3"><label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Exact Location</label><select value={location} onChange={(e) => setLocation(e.target.value)} className="w-full p-5 rounded-[1.5rem] border-2 border-slate-100 bg-white text-sm font-bold outline-none shadow-sm">{LOCATIONS.map(loc => <option key={loc} value={loc}>{loc}</option>)}</select></div>
@@ -367,7 +341,7 @@ export const App = () => {
             <input type="file" ref={fileInputRef} className="hidden" accept="image/*" capture="environment" onChange={(e) => { const f = e.target.files?.[0]; if(f) { const r = new FileReader(); r.onloadend = () => setImage(r.result as string); r.readAsDataURL(f); }}} />
           </div>
         </div>
-        <button onClick={() => { handleAddReport({ title, location, system, image }); setView('landing'); }} disabled={!title} className="w-full p-7 rounded-[2rem] bg-blue-600 text-white font-black text-xl flex items-center justify-center gap-4 shadow-2xl shadow-blue-500/30 active:scale-95 disabled:opacity-40 transition-all shrink-0">Submit to Ops Centre</button>
+        <button onClick={() => { handleAddReport({ title, location, system, image }); setView('landing'); }} disabled={!title} className="w-full p-7 rounded-[2rem] bg-blue-600 text-white font-black text-xl flex items-center justify-center gap-4 shadow-2xl shadow-blue-500/30 active:scale-95 disabled:opacity-40 transition-all shrink-0">Submit Report</button>
       </div>
     );
   };
@@ -414,13 +388,39 @@ export const App = () => {
   );
 };
 
-// --- SUB-COMPONENTS (Operational parts) ---
+// --- SUB-COMPONENTS ---
+
+const SettingsView = ({ onShare }: { onShare: () => void }) => (
+  <div className="max-w-3xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="bg-white rounded-[2.5rem] p-8 shadow-xl border border-slate-100">
+      <h3 className="text-2xl font-black uppercase tracking-tighter mb-6">System Management</h3>
+      <div className="space-y-4">
+        <button onClick={onShare} className="w-full p-6 bg-blue-600 text-white rounded-[1.5rem] flex items-center justify-between group active:scale-98 transition-all">
+          <div className="flex items-center gap-4"><div className="bg-white/20 p-3 rounded-xl"><Share2 className="w-6 h-6" /></div><div className="text-left"><p className="text-sm font-black uppercase">Share App Link</p><p className="text-[10px] opacity-70">Send this URL to Staff members</p></div></div>
+          <ChevronRight className="w-5 h-5 opacity-40 group-hover:translate-x-1 transition-transform" />
+        </button>
+        <div className="p-6 bg-slate-50 rounded-[1.5rem] border border-slate-100 flex items-center justify-between">
+          <div className="flex items-center gap-4"><div className="bg-white p-3 rounded-xl shadow-sm text-slate-400"><Lock className="w-6 h-6" /></div><div><p className="text-sm font-black uppercase">Manager Passcode</p><p className="text-[10px] text-slate-400 uppercase tracking-widest">{MASTER_PASSCODE}</p></div></div>
+          <Info className="w-5 h-5 text-slate-300" />
+        </div>
+        <button onClick={() => { if(confirm('¿Borrar todos los reportes y ajustes?')) { localStorage.clear(); window.location.reload(); } }} className="w-full p-6 bg-rose-50 text-rose-600 rounded-[1.5rem] flex items-center justify-between group active:scale-98 transition-all border border-rose-100 mt-8">
+          <div className="flex items-center gap-4"><div className="bg-rose-100 p-3 rounded-xl"><Trash2 className="w-6 h-6" /></div><div className="text-left"><p className="text-sm font-black uppercase">Clear Local Cache</p><p className="text-[10px] opacity-70">Reset all data on this device</p></div></div>
+        </button>
+      </div>
+    </div>
+    <div className="bg-[#0B1120] text-white rounded-[2.5rem] p-10 shadow-2xl relative overflow-hidden">
+      <QrCode className="absolute -bottom-10 -right-10 w-48 h-48 opacity-5" />
+      <h4 className="text-lg font-serif italic mb-2">Cloud Sync Deployment</h4>
+      <p className="text-xs text-slate-400 leading-relaxed max-w-md">Currently using Local Storage. For multi-device real-time sync across all staff phones, connect to a Firebase/Supabase backend.</p>
+    </div>
+  </div>
+);
 
 const ShareReportModal = ({ currentDate, onClose }: { currentDate: Date, onClose: () => void }) => {
   const [hasDownloaded, setHasDownloaded] = useState(false);
   const monthName = currentDate.toLocaleString('en-US', { month: 'long', year: 'numeric' });
   const emailSubject = `Facility Operations Review - ${monthName}`;
-  const emailBody = `Hi Shelby, \n\nAttached is the ${monthName} facility operations report for Bella Cosa. All maintenance requirements have been documented.\n\nBest,\nCarlos Velez\nProperty Manager`;
+  const emailBody = `Hi Shelby, \n\nAttached is the ${monthName} facility operations report for Bella Cosa.\n\nBest,\nCarlos Velez\nProperty Manager`;
 
   return (
     <div className="fixed inset-0 z-[250] flex items-end lg:items-center justify-center bg-[#0B1120]/90 backdrop-blur-xl p-4 animate-in fade-in duration-300 print:hidden">
@@ -432,7 +432,6 @@ const ShareReportModal = ({ currentDate, onClose }: { currentDate: Date, onClose
           </div>
           <div className={`p-6 rounded-[2rem] border-2 transition-all duration-500 ${hasDownloaded ? 'bg-emerald-50 border-emerald-200 ring-4 ring-emerald-50' : 'bg-slate-50 border-slate-100 opacity-40'}`}>
             <div className="flex flex-col gap-6"><div className="flex items-center justify-between gap-4"><div className="flex items-center gap-4"><div className={`p-3 rounded-xl ${hasDownloaded ? 'bg-emerald-600 text-white shadow-lg' : 'bg-slate-300 text-white'}`}><Mail className="w-6 h-6" /></div><div><p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Step 2</p><p className="text-sm font-bold text-slate-900 leading-none mt-1">Submit to Director</p></div></div><button onClick={() => window.location.href = `mailto:?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`} disabled={!hasDownloaded} className={`px-6 py-4 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-xl transition-all active:scale-95 ${hasDownloaded ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}`}>Send to Shelby</button></div>
-              {hasDownloaded && <div className="bg-white/60 p-5 rounded-2xl border border-emerald-100 animate-in slide-in-from-top duration-500 flex items-start gap-4"><Info className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" /><div><p className="text-[10px] font-black uppercase text-emerald-600 tracking-widest mb-1">Final Sync</p><p className="text-xs text-slate-600 font-medium italic">"Open your email client, attach the PDF from your downloads, and hit send."</p></div></div>}
             </div>
           </div>
         </div>
@@ -441,7 +440,7 @@ const ShareReportModal = ({ currentDate, onClose }: { currentDate: Date, onClose
   );
 };
 
-const WorkOrdersView = ({ reports, handleEditOrder }: any) => {
+const WorkOrdersView = ({ reports, handleEditOrder }: { reports: WorkOrder[], handleEditOrder: (r: WorkOrder) => void }) => {
   const [activeFilter, setActiveFilter] = useState<'ALL' | 'PENDING' | 'IN PROGRESS'>('ALL');
   const filtered = reports.filter((r: WorkOrder) => {
     if (r.status === 'COMPLETED') return false; 
@@ -484,26 +483,25 @@ const WorkOrdersView = ({ reports, handleEditOrder }: any) => {
             <ChevronRight className="w-5 h-5 text-slate-200 shrink-0" />
           </div>
         ))}
-        {filtered.length === 0 && <div className="p-20 text-center text-slate-300 font-black uppercase text-[11px] tracking-[0.3em] border-2 border-dashed border-slate-200 rounded-[3rem]">No Active Orders documented</div>}
       </div>
     </div>
   );
 };
 
-const InventoryView = ({ inventoryItems }: any) => (
+const InventoryView = ({ inventoryItems }: { inventoryItems: InventoryItem[] }) => (
   <div className="w-full space-y-6 max-w-7xl mx-auto animate-in fade-in duration-500">
     <div className="hidden lg:block bg-white rounded-[3rem] border border-slate-100 shadow-xl overflow-hidden">
        <table className="w-full text-left table-fixed">
          <thead className="bg-slate-50 border-b text-[10px] font-black uppercase text-slate-400 tracking-[0.2em]"><tr><th className="px-10 py-7 w-[40%]">Asset / Item</th><th className="px-10 py-7 w-[20%]">Category</th><th className="px-10 py-7 w-[20%] text-center">Available Stock</th><th className="px-10 py-7 w-[20%] text-right">Health Status</th></tr></thead>
          <tbody>
-           {inventoryItems.map((i: any) => (
+           {inventoryItems.map((i: InventoryItem) => (
              <tr key={i.id} className="border-b border-slate-50 hover:bg-slate-50 transition-all"><td className="px-10 py-7 font-black uppercase text-sm tracking-tight">{i.name}</td><td className="px-10 py-7 text-[10px] font-bold uppercase text-slate-500 tracking-widest">{i.category}</td><td className="px-10 py-7 text-center"><span className="text-xl font-black">{i.stock}</span> <span className="text-[10px] font-bold uppercase text-slate-400">{i.unit}</span></td><td className="px-10 py-7 text-right"><span className={`px-5 py-2.5 rounded-full text-[10px] font-black uppercase shadow-sm ${i.status === 'Low Stock' ? 'bg-amber-50 text-amber-600 border border-amber-100' : (i.status === 'Out of Stock' ? 'bg-rose-50 text-rose-600 border border-rose-100' : 'bg-emerald-50 text-emerald-600 border border-emerald-100')}`}>{i.status}</span></td></tr>
            ))}
          </tbody>
        </table>
     </div>
     <div className="lg:hidden space-y-4">
-      {inventoryItems.map((item: any) => (
+      {inventoryItems.map((item: InventoryItem) => (
         <div key={item.id} className="bg-white p-6 rounded-[2.5rem] border border-slate-200 shadow-sm flex justify-between items-center"><div className="space-y-1.5 min-w-0"><h4 className="text-sm font-black uppercase text-slate-900 tracking-tight">{item.name}</h4><p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">{item.category}</p><p className="text-[14px] font-black text-slate-900 pt-1 leading-none">{item.stock} {item.unit}</p></div><span className={`px-4 py-2 rounded-full text-[9px] font-black uppercase shrink-0 shadow-sm ${item.status === 'Low Stock' ? 'bg-amber-50 text-amber-600' : (item.status === 'Out of Stock' ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600')}`}>{item.status}</span></div>
       ))}
     </div>
@@ -516,17 +514,17 @@ const ShoppingListView = ({ inventoryItems }: { inventoryItems: InventoryItem[] 
     <div className="w-full space-y-8 max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="bg-amber-600 text-white rounded-[3rem] p-10 lg:p-14 shadow-2xl relative overflow-hidden border border-amber-500">
          <div className="absolute top-0 right-0 p-10 opacity-10"><ShoppingCart className="w-56 h-56" /></div>
-         <div className="relative z-10"><div className="bg-white/20 px-4 py-1.5 rounded-xl inline-block mb-4 backdrop-blur-sm"><span className="text-[10px] font-black uppercase tracking-[0.4em] text-white">Replenishment List</span></div><h1 className="text-4xl lg:text-6xl font-serif italic text-white leading-tight">Procurement Dashboard</h1><p className="text-amber-100 font-bold uppercase tracking-[0.3em] text-[12px] mt-6 leading-none">{shopList.length} Operational materials require immediate restock</p></div>
+         <div className="relative z-10"><div className="bg-white/20 px-4 py-1.5 rounded-xl inline-block mb-4 backdrop-blur-sm"><span className="text-[10px] font-black uppercase tracking-[0.4em] text-white">Replenishment List</span></div><h1 className="text-4xl lg:text-6xl font-serif italic text-white leading-tight">Procurement Dashboard</h1></div>
       </div>
       <div className="bg-white rounded-[3rem] border border-slate-100 shadow-2xl overflow-hidden">
         {shopList.length > 0 ? (
           <table className="w-full text-left">
-            <thead className="bg-slate-50 border-b text-[10px] font-black uppercase text-slate-400 tracking-[0.2em]"><tr><th className="px-10 py-7">Resource Description</th><th className="px-10 py-7 text-center">Procurement Status</th><th className="px-10 py-7 text-right">Warehouse Units</th></tr></thead>
+            <thead className="bg-slate-50 border-b text-[10px] font-black uppercase text-slate-400 tracking-[0.2em]"><tr><th className="px-10 py-7">Resource Description</th><th className="px-10 py-7 text-center">Status</th><th className="px-10 py-7 text-right">Units</th></tr></thead>
             <tbody className="divide-y divide-slate-50">
-              {shopList.map(item => (<tr key={item.id} className="hover:bg-amber-50/30 transition-all"><td className="px-10 py-8"><div className="flex flex-col gap-1"><span className="text-lg font-black uppercase text-slate-900 tracking-tight">{item.name}</span><span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{item.category}</span></div></td><td className="px-10 py-8 text-center"><span className={`px-5 py-2.5 rounded-full text-[10px] font-black uppercase shadow-sm ${item.status === 'Out of Stock' ? 'bg-rose-100 text-rose-600' : 'bg-amber-100 text-amber-700'}`}>{item.status}</span></td><td className="px-10 py-8 text-right"><span className="text-2xl font-black text-slate-900 leading-none">{item.stock}</span> <span className="text-[10px] font-bold uppercase text-slate-400">{item.unit}</span></td></tr>))}
+              {shopList.map(item => (<tr key={item.id} className="hover:bg-amber-50/30 transition-all"><td className="px-10 py-8"><div className="flex flex-col gap-1"><span className="text-lg font-black uppercase text-slate-900 tracking-tight">{item.name}</span><span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{item.category}</span></div></td><td className="px-10 py-8 text-center"><span className={`px-5 py-2.5 rounded-full text-[10px] font-black uppercase shadow-sm ${item.status === 'Out of Stock' ? 'bg-rose-100 text-rose-600' : 'bg-amber-100 text-amber-700'}`}>{item.status}</span></td><td className="px-10 py-8 text-right"><span className="text-2xl font-black text-slate-900 leading-none">{item.stock}</span></td></tr>))}
             </tbody>
           </table>
-        ) : <div className="p-32 text-center space-y-6"><div className="bg-emerald-50 w-24 h-24 rounded-full flex items-center justify-center mx-auto text-emerald-500 shadow-inner"><CheckCircle2 className="w-12 h-12" /></div><h3 className="text-2xl font-black uppercase tracking-tight text-slate-900">Inventory Optimized</h3><p className="text-slate-400 text-sm font-medium italic">All facility resources are currently at their target performance thresholds.</p></div>}
+        ) : <div className="p-32 text-center text-slate-400 font-black uppercase tracking-widest">Inventory Saturated</div>}
       </div>
     </div>
   );
@@ -537,7 +535,7 @@ const PMPlannerView = ({ pmTasks }: { pmTasks: PMTask[] }) => (
     <div className="hidden lg:block bg-white rounded-[3rem] border border-slate-100 shadow-xl overflow-hidden">
       <table className="w-full text-left">
         <thead className="bg-slate-50 border-b text-[10px] font-black uppercase text-slate-400 tracking-[0.2em]">
-          <tr><th className="px-10 py-7">Preventive Protocol</th><th className="px-10 py-7">Target System</th><th className="px-10 py-7">Scheduled Execution</th><th className="px-10 py-7 text-right">Phase</th></tr>
+          <tr><th className="px-10 py-7">Preventive Protocol</th><th className="px-10 py-7">Asset Class</th><th className="px-10 py-7">Due Date</th><th className="px-10 py-7 text-right">Phase</th></tr>
         </thead>
         <tbody className="divide-y divide-slate-50">
           {pmTasks.map(t => (
@@ -555,7 +553,7 @@ const PMPlannerView = ({ pmTasks }: { pmTasks: PMTask[] }) => (
       {pmTasks.map(t => (
         <div key={t.id} className="bg-white p-7 rounded-[2.5rem] border border-slate-200 shadow-sm flex justify-between items-center">
           <div className="space-y-1.5"><h4 className="text-sm font-black uppercase text-slate-900 tracking-tight leading-none">{t.title}</h4><p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">{t.system}</p><p className="text-xs font-black text-blue-600 pt-1 leading-none">{t.dueDate}</p></div>
-          <span className="bg-blue-50 text-blue-600 px-4 py-2 rounded-full text-[9px] font-black uppercase shrink-0 border border-blue-100">{t.status}</span>
+          <span className="bg-blue-50 text-blue-600 px-4 py-2 rounded-full text-[9px] font-black uppercase shrink-0">{t.status}</span>
         </div>
       ))}
     </div>
@@ -579,7 +577,7 @@ const CalendarView = ({ currentDate, setCurrentDate, noWeddingDays, reports, pmT
 
       cells.push(
         <div key={d} onClick={() => setSelectedDateAction(dateStr)} className="h-32 sm:h-40 border-r border-b border-slate-100 p-4 hover:bg-blue-50/30 cursor-pointer relative transition-all text-slate-900 overflow-hidden group">
-          <span className={`text-sm font-black ${isToday ? 'bg-blue-600 text-white w-8 h-8 flex items-center justify-center rounded-full shadow-lg shadow-blue-200' : 'text-slate-300'}`}>{d}</span>
+          <span className={`text-sm font-black ${isToday ? 'bg-blue-600 text-white w-8 h-8 flex items-center justify-center rounded-full shadow-lg' : 'text-slate-300'}`}>{d}</span>
           <div className="mt-3 space-y-1.5">
             {isNoWedding && <div className="bg-emerald-500 text-white text-[9px] font-black p-2 rounded-xl uppercase flex items-center gap-1.5 shadow-md"><CheckCircle2 className="w-3 h-3" /> AVAILABLE</div>}
             {dayPMs.map((p: any, i: number) => <div key={i} className="bg-amber-100 text-amber-700 text-[8px] font-black p-2 rounded-lg uppercase truncate border border-amber-200/50">PM: {p.system}</div>)}
@@ -595,10 +593,10 @@ const CalendarView = ({ currentDate, setCurrentDate, noWeddingDays, reports, pmT
     <div className="bg-white rounded-[3rem] border border-slate-100 shadow-2xl flex flex-col h-full animate-in fade-in duration-500 text-slate-900 overflow-hidden">
       <div className="p-10 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10">
         <div className="flex items-center gap-8">
-          <h3 className="text-3xl font-black uppercase tracking-tighter leading-none">{monthNames[currentDate.getMonth()]} <span className="text-blue-600 font-serif italic text-2xl lowercase">{currentDate.getFullYear()}</span></h3>
-          <div className="flex bg-slate-50 rounded-[1.5rem] p-1.5 border border-slate-100 shadow-inner">
-            <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))} className="p-3 hover:bg-white rounded-xl transition-all text-slate-400 hover:text-blue-600 shadow-sm"><ChevronLeft className="w-6 h-6" /></button>
-            <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))} className="p-3 hover:bg-white rounded-xl transition-all text-slate-400 hover:text-blue-600 shadow-sm"><ChevronRight className="w-6 h-6" /></button>
+          <h3 className="text-3xl font-black uppercase tracking-tighter leading-none">{monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}</h3>
+          <div className="flex bg-slate-50 rounded-[1.5rem] p-1.5 border border-slate-100">
+            <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))} className="p-3 hover:bg-white rounded-xl transition-all text-slate-400 shadow-sm"><ChevronLeft className="w-6 h-6" /></button>
+            <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))} className="p-3 hover:bg-white rounded-xl transition-all text-slate-400 shadow-sm"><ChevronRight className="w-6 h-6" /></button>
           </div>
         </div>
       </div>
@@ -617,27 +615,24 @@ const GMReportView = ({ reports, currentDate, onOpenShare }: any) => {
     <div className="max-w-5xl mx-auto space-y-10 animate-in slide-in-from-bottom-4 duration-500 pb-24 font-sans text-slate-900">
       <div className="bg-[#0B1120] text-white rounded-[3rem] p-12 lg:p-16 shadow-2xl relative overflow-hidden border border-slate-800">
         <div className="absolute top-0 right-0 p-10 opacity-5"><FileBarChart className="w-56 h-56" /></div>
-        <div className="relative z-10 flex flex-col md:flex-row justify-between items-center gap-10">
-          <div className="flex flex-col md:flex-row items-center gap-12 text-center md:text-left">
-            <div className="space-y-4">
-              <div className="bg-blue-600 px-4 py-1.5 rounded-xl inline-block shadow-lg shadow-blue-500/20"><span className="text-[11px] font-black uppercase tracking-[0.4em] text-white">Operations Performance</span></div>
-              <h1 className="text-5xl lg:text-6xl font-serif italic text-white leading-tight">Strategic Summary</h1>
-              <p className="text-blue-400 font-black uppercase tracking-[0.5em] text-[12px] opacity-80">{monthYear}</p>
-            </div>
-            <div className="hidden md:block w-px h-28 bg-slate-800"></div>
-            <div className="flex flex-col">
-              <p className="text-slate-500 font-black uppercase tracking-[0.4em] text-[10px] mb-3 leading-none">Property Manager</p>
-              <p className="text-3xl font-black uppercase tracking-tighter text-white leading-none">{PROPERTY_MANAGER}</p>
-            </div>
+        <div className="relative z-10 flex flex-col md:flex-row justify-between items-center gap-10 text-center md:text-left">
+          <div className="space-y-4">
+            <div className="bg-blue-600 px-4 py-1.5 rounded-xl inline-block shadow-lg shadow-blue-500/20"><span className="text-[11px] font-black uppercase tracking-[0.4em] text-white">Operations Performance</span></div>
+            <h1 className="text-5xl lg:text-6xl font-serif italic text-white leading-tight">Strategic Summary</h1>
+            <p className="text-blue-400 font-black uppercase tracking-[0.5em] text-[12px] opacity-80">{monthYear}</p>
           </div>
-          <button onClick={onOpenShare} className="bg-white/10 hover:bg-white/20 p-5 rounded-[1.8rem] border border-white/10 transition-all active:scale-95 shadow-xl backdrop-blur-md print:hidden group"><Share2 className="w-7 h-7 text-white group-hover:scale-110 transition-transform" /></button>
+          <div className="flex flex-col">
+            <p className="text-slate-500 font-black uppercase tracking-[0.4em] text-[10px] mb-3 leading-none">Property Manager</p>
+            <p className="text-3xl font-black uppercase tracking-tighter text-white leading-none">{PROPERTY_MANAGER}</p>
+          </div>
+          <button onClick={onOpenShare} className="bg-white/10 hover:bg-white/20 p-5 rounded-[1.8rem] border border-white/10 transition-all active:scale-95 shadow-xl backdrop-blur-md print:hidden group"><Share2 className="w-7 h-7 text-white" /></button>
         </div>
       </div>
       
       <div className="bg-white border border-slate-200 rounded-[4rem] shadow-2xl overflow-hidden">
         <div className="px-12 py-10 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
-          <h3 className="text-[11px] font-black uppercase tracking-[0.5em] text-slate-400 leading-none">Maintenance Documented</h3>
-          <span className="bg-emerald-100 text-emerald-700 px-6 py-2.5 rounded-full text-[11px] font-black uppercase tracking-widest shadow-sm">{completed.length} Successes</span>
+          <h3 className="text-[11px] font-black uppercase tracking-[0.5em] text-slate-400">Maintenance Documented</h3>
+          <span className="bg-emerald-100 text-emerald-700 px-6 py-2.5 rounded-full text-[11px] font-black uppercase tracking-widest">{completed.length} Successes</span>
         </div>
         <div className="divide-y divide-slate-100">
           {completed.length > 0 ? completed.map((t: WorkOrder) => (
@@ -661,76 +656,70 @@ const GMReportView = ({ reports, currentDate, onOpenShare }: any) => {
                 )}
               </div>
             </div>
-          )) : (
-            <div className="p-32 text-center space-y-6">
-              <div className="bg-slate-50 w-28 h-28 rounded-full flex items-center justify-center mx-auto text-slate-300 shadow-inner"><ClipboardList className="w-14 h-14" /></div>
-              <h3 className="text-2xl font-black uppercase tracking-tight text-slate-900">Archive Clear</h3>
-              <p className="text-slate-400 text-sm font-medium italic">No finalized deployments documented for the current reporting phase.</p>
-            </div>
-          )}
+          )) : <div className="p-32 text-center text-slate-300 uppercase font-black tracking-widest">No entries found</div>}
         </div>
       </div>
     </div>
   );
 };
 
-const CreateWorkOrderModal = ({ onClose, onSubmit }: any) => {
+const CreateWorkOrderModal = ({ onClose, onSubmit }: { onClose: () => void, onSubmit: (d: Partial<WorkOrder>) => void }) => {
   const [title, setTitle] = useState('');
   const [location, setLocation] = useState(LOCATIONS[0]);
   const [system, setSystem] = useState(SYSTEMS[0]);
   return (
     <div className="fixed inset-0 z-[200] flex items-end lg:items-center justify-center bg-[#0B1120]/95 backdrop-blur-xl p-4 animate-in slide-in-from-bottom duration-300 print:hidden">
-      <div className="bg-white rounded-[3rem] lg:rounded-[4rem] w-full max-w-lg shadow-2xl p-10 lg:p-16 mb-4 border border-slate-100 overflow-y-auto no-scrollbar max-h-[90vh]">
-        <div className="flex justify-between items-start mb-10 shrink-0"><div><h2 className="text-4xl font-black uppercase tracking-tighter leading-none text-slate-900">Ad-hoc Order</h2><p className="text-slate-500 font-medium text-sm mt-3 italic">Deploy a direct maintenance task.</p></div><button onClick={onClose} className="p-4 bg-slate-50 rounded-2xl transition-all hover:bg-slate-100 active:scale-90"><X className="w-7 h-7" /></button></div>
-        <div className="space-y-6 pb-6">
+      <div className="bg-white rounded-[3rem] lg:rounded-[4rem] w-full max-w-lg shadow-2xl p-10 lg:p-16 mb-4 border border-slate-100">
+        <div className="flex justify-between items-start mb-10"><div><h2 className="text-4xl font-black uppercase tracking-tighter leading-none text-slate-900">Ad-hoc Order</h2></div><button onClick={onClose} className="p-4 bg-slate-50 rounded-2xl transition-all active:scale-90"><X className="w-7 h-7" /></button></div>
+        <div className="space-y-6">
           <div className="space-y-3"><label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.3em]">Summary of Task</label><input type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="What needs to be done?" className="w-full p-5 rounded-[1.5rem] border-2 border-slate-100 bg-white text-base font-bold outline-none shadow-sm focus:border-blue-500 transition-all" /></div>
           <div className="grid grid-cols-1 gap-5">
-            <div className="space-y-3"><label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.3em]">Venue Location</label><select value={location} onChange={(e) => setLocation(e.target.value)} className="w-full p-5 rounded-[1.5rem] border-2 border-slate-100 bg-white text-sm font-bold outline-none shadow-sm">{LOCATIONS.map(loc => <option key={loc} value={loc}>{loc}</option>)}</select></div>
-            <div className="space-y-3"><label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.3em]">Infrastructure Type</label><select value={system} onChange={(e) => setSystem(e.target.value)} className="w-full p-5 rounded-[1.5rem] border-2 border-slate-100 bg-white text-sm font-bold outline-none shadow-sm">{SYSTEMS.map(sys => <option key={sys} value={sys}>{sys}</option>)}</select></div>
+            <div className="space-y-3"><label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.3em]">Location</label><select value={location} onChange={(e) => setLocation(e.target.value)} className="w-full p-5 rounded-[1.5rem] border-2 border-slate-100 bg-white text-sm font-bold outline-none shadow-sm">{LOCATIONS.map(loc => <option key={loc} value={loc}>{loc}</option>)}</select></div>
+            <div className="space-y-3"><label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.3em]">System</label><select value={system} onChange={(e) => setSystem(e.target.value)} className="w-full p-5 rounded-[1.5rem] border-2 border-slate-100 bg-white text-sm font-bold outline-none shadow-sm">{SYSTEMS.map(sys => <option key={sys} value={sys}>{sys}</option>)}</select></div>
           </div>
-          <button onClick={() => onSubmit({ title, location, system })} disabled={!title} className="w-full p-7 rounded-[1.8rem] bg-blue-600 text-white font-black text-lg shadow-2xl shadow-blue-500/30 active:scale-95 disabled:opacity-40 transition-all mt-6 uppercase tracking-widest">Activate Order</button>
+          <button onClick={() => onSubmit({ title, location, system })} disabled={!title} className="w-full p-7 rounded-[1.8rem] bg-blue-600 text-white font-black text-lg shadow-2xl active:scale-95 transition-all mt-6 uppercase tracking-widest">Activate Order</button>
         </div>
       </div>
     </div>
   );
 };
 
-const CreatePMModal = ({ onClose, onSubmit }: any) => {
+const CreatePMModal = ({ onClose, onSubmit }: { onClose: () => void, onSubmit: (d: any) => void }) => {
   const [form, setForm] = useState({ title: '', location: LOCATIONS[0], system: SYSTEMS[0], frequency: 'Quarterly', dueDate: toISODate(new Date()) });
   return (
     <div className="fixed inset-0 z-[200] flex items-end lg:items-center justify-center bg-[#0B1120]/95 backdrop-blur-xl p-4 animate-in slide-in-from-bottom duration-300 print:hidden">
-      <div className="bg-white rounded-[3rem] lg:rounded-[4rem] w-full max-w-2xl shadow-2xl p-10 lg:p-16 mb-4 border border-slate-100 overflow-y-auto no-scrollbar max-h-[90vh]">
-        <div className="flex justify-between items-start mb-12 shrink-0"><div><h2 className="text-4xl font-black uppercase tracking-tighter text-slate-900 leading-none tracking-tight">PM Schedule</h2><p className="text-[10px] font-black text-blue-500 uppercase tracking-[0.5em] mt-4">Preventive Maintenance Log</p></div><button onClick={onClose} className="p-4 bg-slate-50 rounded-2xl transition-all hover:bg-slate-100 active:scale-90"><X className="w-7 h-7" /></button></div>
+      <div className="bg-white rounded-[3rem] lg:rounded-[4rem] w-full max-w-2xl shadow-2xl p-10 lg:p-16 mb-4 border border-slate-100">
+        <div className="flex justify-between items-start mb-12"><div><h2 className="text-4xl font-black uppercase tracking-tighter text-slate-900 leading-none">PM Schedule</h2></div><button onClick={onClose} className="p-4 bg-slate-50 rounded-2xl active:scale-90"><X className="w-7 h-7" /></button></div>
         <div className="space-y-8 pb-8">
-          <div className="space-y-3"><label className="text-[11px] font-black uppercase text-slate-400 tracking-[0.4em]">Protocol Name</label><input className="w-full p-6 rounded-[1.8rem] bg-slate-50 border-2 border-slate-100 text-base font-bold outline-none focus:border-blue-500 shadow-inner" value={form.title} onChange={e => setForm({...form, title: e.target.value})} placeholder="e.g., HVAC Unit 2 Deep Cleaning" /></div>
+          <div className="space-y-3"><label className="text-[11px] font-black uppercase text-slate-400 tracking-[0.4em]">Protocol Name</label><input className="w-full p-6 rounded-[1.8rem] bg-slate-50 border-2 border-slate-100 text-base font-bold outline-none focus:border-blue-500" value={form.title} onChange={e => setForm({...form, title: e.target.value})} placeholder="e.g., HVAC Deep Cleaning" /></div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-3"><label className="text-[11px] font-black uppercase text-slate-400 tracking-[0.4em]">Resource Area</label><select className="w-full p-6 rounded-[1.8rem] bg-slate-50 border-2 border-slate-100 text-sm font-bold outline-none" value={form.location} onChange={e => setForm({...form, location: e.target.value})}>{LOCATIONS.map(l => <option key={l} value={l}>{l}</option>)}</select></div>
             <div className="space-y-3"><label className="text-[11px] font-black uppercase text-slate-400 tracking-[0.4em]">Asset Class</label><select className="w-full p-6 rounded-[1.8rem] bg-slate-50 border-2 border-slate-100 text-sm font-bold outline-none" value={form.system} onChange={e => setForm({...form, system: e.target.value})}>{SYSTEMS.map(s => <option key={s} value={s}>{s}</option>)}</select></div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-3"><label className="text-[11px] font-black uppercase text-slate-400 tracking-[0.4em]">Target Date</label><input type="date" className="w-full p-6 rounded-[1.8rem] bg-slate-50 border-2 border-slate-100 text-sm font-bold outline-none" value={form.dueDate} onChange={e => setForm({...form, dueDate: e.target.value})} /></div>
-            <div className="space-y-3"><label className="text-[11px] font-black uppercase text-slate-400 tracking-[0.4em]">Cycle Frequency</label><select className="w-full p-6 rounded-[1.8rem] bg-slate-50 border-2 border-slate-100 text-sm font-bold outline-none" value={form.frequency} onChange={e => setForm({...form, frequency: e.target.value})}><option value="Monthly">Monthly</option><option value="Quarterly">Quarterly</option><option value="Annual">Annual</option></select></div>
+            <div className="space-y-3"><label className="text-[11px] font-black uppercase text-slate-400 tracking-[0.4em]">Frequency</label><select className="w-full p-6 rounded-[1.8rem] bg-slate-50 border-2 border-slate-100 text-sm font-bold outline-none" value={form.frequency} onChange={e => setForm({...form, frequency: e.target.value})}><option value="Monthly">Monthly</option><option value="Quarterly">Quarterly</option><option value="Annual">Annual</option></select></div>
           </div>
-          <button onClick={() => onSubmit(form)} disabled={!form.title} className="w-full py-7 rounded-[2.5rem] font-black text-[12px] uppercase tracking-[0.5em] bg-blue-600 text-white shadow-2xl shadow-blue-500/30 transition-all active:scale-95 mt-4">Program Protocol</button>
+          <button onClick={() => onSubmit(form)} disabled={!form.title} className="w-full py-7 rounded-[2.5rem] font-black text-[12px] uppercase tracking-[0.5em] bg-blue-600 text-white shadow-2xl transition-all active:scale-95 mt-4">Program Protocol</button>
         </div>
       </div>
     </div>
   );
 };
 
-const AddInventoryModal = ({ onClose, onSubmit }: any) => {
+const AddInventoryModal = ({ onClose, onSubmit }: { onClose: () => void, onSubmit: (d: any) => void }) => {
   const [form, setForm] = useState({ name: '', category: SYSTEMS[0], stock: 0, minStock: 5, unit: 'pcs' });
   return (
     <div className="fixed inset-0 z-[200] flex items-end lg:items-center justify-center bg-[#0B1120]/95 backdrop-blur-xl p-4 animate-in slide-in-from-bottom duration-300 print:hidden">
-      <div className="bg-white rounded-[3rem] lg:rounded-[4rem] w-full max-w-xl shadow-2xl p-10 lg:p-16 mb-4 border border-slate-100 overflow-y-auto no-scrollbar max-h-[90vh]">
-        <div className="flex justify-between items-start mb-12 shrink-0"><div><h2 className="text-4xl font-black uppercase tracking-tighter text-slate-900 leading-none">New Resource</h2><p className="text-[10px] font-black text-blue-500 uppercase tracking-[0.5em] mt-4">Supply & Logistics Log</p></div><button onClick={onClose} className="p-4 bg-slate-50 rounded-2xl transition-all hover:bg-slate-100 active:scale-90"><X className="w-7 h-7" /></button></div>
+      <div className="bg-white rounded-[3rem] lg:rounded-[4rem] w-full max-w-xl shadow-2xl p-10 lg:p-16 mb-4 border border-slate-100">
+        <div className="flex justify-between items-start mb-12 shrink-0"><div><h2 className="text-4xl font-black uppercase tracking-tighter text-slate-900 leading-none">New Resource</h2></div><button onClick={onClose} className="p-4 bg-slate-50 rounded-2xl active:scale-90"><X className="w-7 h-7" /></button></div>
         <div className="space-y-8 pb-8">
-          <div className="space-y-3"><label className="text-[11px] font-black uppercase text-slate-400 tracking-[0.4em]">Item Description</label><input className="w-full p-6 rounded-[1.8rem] bg-slate-50 border-2 border-slate-100 text-base font-bold outline-none focus:border-blue-500 shadow-inner" value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="e.g., LED Light Fixture Type-C" /></div>
+          <div className="space-y-3"><label className="text-[11px] font-black uppercase text-slate-400 tracking-[0.4em]">Item Description</label><input className="w-full p-6 rounded-[1.8rem] bg-slate-50 border-2 border-slate-100 text-base font-bold outline-none focus:border-blue-500" value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="e.g., LED Light Fixture" /></div>
           <div className="grid grid-cols-2 gap-8">
             <div className="space-y-3"><label className="text-[11px] font-black uppercase text-slate-400 tracking-[0.4em]">Base Stock</label><input type="number" className="w-full p-6 rounded-[1.8rem] bg-slate-50 border-2 border-slate-100 text-sm font-bold outline-none" value={form.stock} onChange={e => setForm({...form, stock: parseInt(e.target.value) || 0})} /></div>
-            <div className="space-y-3"><label className="text-[11px] font-black uppercase text-slate-400 tracking-[0.4em]">Unit Type</label><select className="w-full p-6 rounded-[1.8rem] bg-slate-50 border-2 border-slate-100 text-sm font-bold outline-none" value={form.unit} onChange={e => setForm({...form, unit: e.target.value})}><option value="pcs">pcs</option><option value="boxes">boxes</option><option value="gallons">gallons</option><option value="units">units</option></select></div>
+            <div className="space-y-3"><label className="text-[11px] font-black uppercase text-slate-400 tracking-[0.4em]">Unit Type</label><select className="w-full p-6 rounded-[1.8rem] bg-slate-50 border-2 border-slate-100 text-sm font-bold outline-none" value={form.unit} onChange={e => setForm({...form, unit: e.target.value})}><option value="pcs">pcs</option><option value="boxes">boxes</option><option value="gallons">gallons</option></select></div>
           </div>
-          <button onClick={() => onSubmit(form)} disabled={!form.name} className="w-full py-7 rounded-[2.5rem] font-black text-[12px] uppercase tracking-[0.5em] bg-blue-600 text-white shadow-2xl shadow-blue-500/30 active:scale-95 transition-all mt-4 uppercase">Initialize Asset</button>
+          <button onClick={() => onSubmit(form)} disabled={!form.name} className="w-full py-7 rounded-[2.5rem] font-black text-[12px] uppercase tracking-[0.5em] bg-blue-600 text-white shadow-2xl active:scale-95 mt-4">Initialize Asset</button>
         </div>
       </div>
     </div>
@@ -754,27 +743,26 @@ const ManageOrderModal = ({ order, onClose, onUpdate, onTranslate, isTranslating
   return (
     <div className="fixed inset-0 z-[200] flex items-end lg:items-center justify-center bg-[#0B1120]/95 backdrop-blur-xl p-4 animate-in slide-in-from-bottom duration-300 print:hidden">
       <div className="bg-white rounded-[3rem] lg:rounded-[4rem] w-full max-w-3xl shadow-2xl p-10 lg:p-16 overflow-y-auto no-scrollbar max-h-[95vh] border border-slate-100">
-        <div className="flex justify-between items-start mb-12 shrink-0"><div className="flex-1 min-w-0"><span className="text-[10px] lg:text-[12px] font-black text-blue-600 bg-blue-50 px-4 py-2 rounded-xl uppercase mb-4 inline-block tracking-[0.4em]">Operations Sync</span><h2 className="text-3xl lg:text-5xl font-black uppercase tracking-tighter text-slate-900 leading-tight whitespace-normal">{order.title}</h2></div><button onClick={onClose} className="p-4 bg-slate-50 rounded-2xl text-slate-400 hover:text-rose-500 transition-all shrink-0 ml-6 active:scale-90"><X className="w-8 h-8" /></button></div>
+        <div className="flex justify-between items-start mb-12 shrink-0"><div className="flex-1 min-w-0"><h2 className="text-3xl lg:text-5xl font-black uppercase tracking-tighter text-slate-900 leading-tight whitespace-normal">{order.title}</h2></div><button onClick={onClose} className="p-4 bg-slate-50 rounded-2xl active:scale-90"><X className="w-8 h-8" /></button></div>
         <div className="space-y-10 lg:space-y-14">
-          {order.image && (<div className="space-y-4 shrink-0"><label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.5em]">Incident Evidence</label><div className="w-full aspect-video max-h-56 lg:max-h-80 rounded-[3rem] overflow-hidden border-4 border-slate-50 shadow-inner bg-slate-100 flex items-center justify-center"><img src={order.image} className="w-full h-full object-contain" /></div></div>)}
-          <div className="space-y-5 shrink-0"><label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.5em]">Life-cycle Control</label><div className="grid grid-cols-3 gap-4">{['PENDING', 'IN PROGRESS', 'COMPLETED'].map(s => (<button key={s} onClick={() => setStatus(s as WorkOrderStatus)} className={`py-6 lg:py-8 rounded-[2rem] lg:rounded-[2.5rem] text-[10px] lg:text-[12px] font-black border-4 transition-all active:scale-95 shadow-sm ${status === s ? (s === 'COMPLETED' ? 'bg-emerald-500 text-white border-emerald-500 shadow-emerald-500/20' : 'bg-blue-600 text-white border-blue-600 shadow-blue-500/20') : 'bg-white text-slate-300 border-slate-50 hover:border-slate-100'}`}>{s.split(' ')[0]}</button>))}</div></div>
+          {order.image && (<div className="space-y-4 shrink-0"><label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.5em]">Incident Evidence</label><div className="w-full aspect-video max-h-56 lg:max-h-80 rounded-[3rem] overflow-hidden bg-slate-100 flex items-center justify-center"><img src={order.image} className="w-full h-full object-contain" /></div></div>)}
+          <div className="space-y-5 shrink-0"><label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.5em]">Life-cycle Control</label><div className="grid grid-cols-3 gap-4">{['PENDING', 'IN PROGRESS', 'COMPLETED'].map(s => (<button key={s} onClick={() => setStatus(s as WorkOrderStatus)} className={`py-6 rounded-[2rem] text-[10px] lg:text-[12px] font-black border-4 transition-all active:scale-95 ${status === s ? 'bg-blue-600 text-white border-blue-600 shadow-xl' : 'bg-white text-slate-300 border-slate-50'}`}>{s.split(' ')[0]}</button>))}</div></div>
           <div className="space-y-5 shrink-0">
             <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.5em]">Material Deduction</label>
-            <div className="bg-slate-50 p-8 rounded-[3rem] space-y-6 shadow-inner border border-slate-100">
-              <div className="flex gap-3"><select className="flex-1 p-5 rounded-[1.5rem] border-2 border-slate-100 bg-white text-xs font-black uppercase outline-none focus:border-blue-500 shadow-sm" value={selectedItemToAdd} onChange={(e) => setSelectedItemToAdd(e.target.value)}><option value="">Select Resource...</option>{inventoryItems.map((item: InventoryItem) => (<option key={item.id} value={item.id} disabled={item.stock === 0 || usedMaterials.some(m => m.itemId === item.id)}>{item.name} ({item.stock} avail)</option>))}</select><button onClick={addMaterialUsage} className="bg-blue-600 text-white px-6 rounded-2xl active:scale-90 transition-all shadow-lg shadow-blue-500/20"><PlusCircle className="w-7 h-7" /></button></div>
+            <div className="bg-slate-50 p-8 rounded-[3rem] space-y-6">
+              <div className="flex gap-3"><select className="flex-1 p-5 rounded-[1.5rem] bg-white text-xs font-black uppercase outline-none shadow-sm" value={selectedItemToAdd} onChange={(e) => setSelectedItemToAdd(e.target.value)}><option value="">Select Resource...</option>{inventoryItems.map((item: InventoryItem) => (<option key={item.id} value={item.id}>{item.name}</option>))}</select><button onClick={addMaterialUsage} className="bg-blue-600 text-white px-6 rounded-2xl"><PlusCircle className="w-7 h-7" /></button></div>
               <div className="space-y-3">
                 {usedMaterials.map((mat) => (
-                  <div key={mat.itemId} className="flex items-center justify-between bg-white p-5 rounded-[1.5rem] border-2 border-white shadow-sm animate-in fade-in slide-in-from-top duration-300">
-                    <div className="flex flex-col"><span className="text-sm font-black text-slate-900 uppercase tracking-tight leading-none">{mat.name}</span><span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">Resource ID: {mat.itemId}</span></div>
-                    <div className="flex items-center gap-5 ml-4 shrink-0"><div className="flex items-center bg-slate-50 rounded-xl p-2 border border-slate-100"><button onClick={() => setUsedMaterials(prev => prev.map(m => m.itemId === mat.itemId ? { ...m, quantity: Math.max(1, m.quantity - 1) } : m))} className="p-1 text-slate-400 hover:text-blue-600"><Minus className="w-5 h-5" /></button><span className="w-10 text-center text-base font-black text-slate-900">{mat.quantity}</span><button onClick={() => setUsedMaterials(prev => prev.map(m => m.itemId === mat.itemId ? { ...m, quantity: m.quantity + 1 } : m))} className="p-1 text-slate-400 hover:text-blue-600"><Plus className="w-5 h-5" /></button></div><button onClick={() => setUsedMaterials(prev => prev.filter(m => m.itemId !== mat.itemId))} className="text-rose-400 hover:text-rose-600 active:scale-90"><Trash2 className="w-6 h-6" /></button></div>
+                  <div key={mat.itemId} className="flex items-center justify-between bg-white p-5 rounded-[1.5rem] shadow-sm">
+                    <div className="flex flex-col"><span className="text-sm font-black text-slate-900 uppercase">{mat.name}</span></div>
+                    <div className="flex items-center gap-5 ml-4"><button onClick={() => setUsedMaterials(prev => prev.filter(m => m.itemId !== mat.itemId))} className="text-rose-400 hover:text-rose-600"><Trash2 className="w-6 h-6" /></button></div>
                   </div>
                 ))}
-                {usedMaterials.length === 0 && <div className="text-center py-8 border-2 border-dashed border-slate-200 rounded-[2rem]"><p className="text-[11px] font-black text-slate-300 uppercase tracking-[0.4em]">Archive Null — No Materials</p></div>}
               </div>
             </div>
           </div>
-          <div className="space-y-5 shrink-0"><div className="flex justify-between items-end"><label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.5em]">Technician Notes</label><button onClick={() => onTranslate(resNote, setResNote)} disabled={isTranslating} className="text-[9px] font-black text-blue-600 flex items-center gap-2 bg-blue-50 px-5 py-2.5 rounded-2xl hover:bg-blue-100 active:scale-95 disabled:opacity-50 shadow-sm border border-blue-100 transition-all uppercase tracking-widest">{isTranslating ? <Loader2 className="w-5 h-5 animate-spin" /> : <Languages className="w-5 h-5" />} Audit AI</button></div><textarea rows={4} className="w-full p-8 rounded-[2.5rem] bg-slate-50 border-4 border-slate-50 text-base font-semibold outline-none focus:bg-white focus:border-blue-500/20 transition-all shadow-inner resize-none leading-relaxed" value={resNote} onChange={e => setResNote(e.target.value)} placeholder="Finalize resolution details for executive review..." /></div>
-          <button onClick={() => onUpdate(order.id, { status, resolution: resNote, usedMaterials })} className="w-full py-8 lg:py-10 rounded-[2.5rem] lg:rounded-[3rem] font-black text-[14px] uppercase tracking-[0.5em] bg-blue-600 text-white shadow-2xl shadow-blue-500/30 hover:bg-blue-500 active:scale-[0.98] transition-all mb-10">Synchronize Operational Profile</button>
+          <div className="space-y-5 shrink-0"><div className="flex justify-between items-end"><label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.5em]">Notes</label><button onClick={() => onTranslate(resNote, setResNote)} disabled={isTranslating} className="text-[9px] font-black text-blue-600 bg-blue-50 px-5 py-2.5 rounded-2xl flex items-center gap-2">{isTranslating ? <Loader2 className="w-5 h-5 animate-spin" /> : <Languages className="w-5 h-5" />} AI</button></div><textarea rows={4} className="w-full p-8 rounded-[2.5rem] bg-slate-50 text-base font-semibold outline-none focus:bg-white transition-all shadow-inner" value={resNote} onChange={e => setResNote(e.target.value)} /></div>
+          <button onClick={() => onUpdate(order.id, { status, resolution: resNote, usedMaterials })} className="w-full py-8 lg:py-10 rounded-[3rem] font-black text-[14px] uppercase tracking-[0.5em] bg-blue-600 text-white shadow-2xl hover:bg-blue-500 active:scale-[0.98] transition-all mb-10">Synchronize Operational Profile</button>
         </div>
       </div>
     </div>
