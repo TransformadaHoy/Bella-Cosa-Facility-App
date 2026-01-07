@@ -1,7 +1,7 @@
 
 import { GoogleGenAI } from "@google/genai";
 
-// Initialize with direct API key from process.env following guidelines
+// Initialize the Gemini API client
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 export const translateNote = async (text: string): Promise<string> => {
@@ -10,17 +10,46 @@ export const translateNote = async (text: string): Promise<string> => {
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
-      contents: `Translate the following maintenance note from Spanish to professional, technical English for a General Manager report. Return ONLY the translation text: "${text}"`,
+      contents: `Translate the following maintenance resolution note from Spanish to professional, technical English suitable for a General Manager report. Return ONLY the translated string: "${text}"`,
       config: {
         temperature: 0.1,
         topP: 0.95,
       }
     });
     
-    // Accessing .text as a property, not a method, as per guidelines
     return response.text?.trim() || text;
   } catch (error) {
-    console.error("Translation error:", error);
+    console.error("Gemini Translation error:", error);
     return text;
+  }
+};
+
+export const generateBriefing = async (orders: any[]): Promise<string> => {
+  if (!orders || orders.length === 0) return "No pending orders to analyze today.";
+
+  const orderSummary = orders
+    .filter(o => o.status !== 'COMPLETED')
+    .map(o => `- [${o.priority}] ${o.title} at ${o.location}`)
+    .slice(0, 10) // Limit context for token efficiency
+    .join('\n');
+  
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: `You are the AI Operations Coach for Bella Cosa, a luxury venue. 
+      Analyze these pending work orders and provide a short, executive daily briefing (max 3 sentences). 
+      Identify critical risks or suggested priorities for the team.
+      
+      Orders:\n${orderSummary}`,
+      config: {
+        temperature: 0.7,
+        topP: 0.9,
+      }
+    });
+    
+    return response.text?.trim() || "Operations appear stable. Monitor high priority infrastructure.";
+  } catch (error) {
+    console.error("Gemini Briefing error:", error);
+    return "Operations Coach is currently analyzing offline. Continue with standard protocols.";
   }
 };
