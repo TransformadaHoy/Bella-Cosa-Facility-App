@@ -1,53 +1,12 @@
-
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { 
   ClipboardList, ShieldCheck, ChevronRight, Building2, Send, ArrowLeft,
   LayoutDashboard, Plus, X, Camera, CalendarDays, FileBarChart, 
   Printer, Edit3, Languages, Loader2, CheckCircle2, Box, ChevronLeft,
-  LogOut, Lock, Settings, Delete, AlertCircle, Sparkles, Activity
+  LogOut, Lock, Settings, Delete, AlertCircle, Sparkles, Activity, RefreshCcw
 } from 'lucide-react';
-import { db } from './firebase';
 import { translateNote, generateBriefing } from './services/geminiService';
-import { 
-  collection, 
-  addDoc, 
-  updateDoc, 
-  doc, 
-  onSnapshot, 
-  query, 
-  orderBy, 
-  setDoc
-} from "firebase/firestore";
-
-// --- TYPES & INTERFACES ---
-type Priority = 'Low' | 'Medium' | 'High';
-type WorkOrderStatus = 'PENDING' | 'IN PROGRESS' | 'COMPLETED';
-
-interface WorkOrder {
-  id: string;
-  title: string;
-  location: string;
-  system: string;
-  priority: Priority;
-  status: WorkOrderStatus;
-  date: string;
-  dueDate: string;
-  image?: string | null;
-  resolution?: string;
-  viewed?: boolean;
-  firestoreId?: string;
-}
-
-interface InventoryItem {
-  id: string;
-  name: string;
-  category: string;
-  stock: number;
-  minStock: number;
-  unit: string;
-  status: 'In Stock' | 'Low Stock' | 'Out of Stock';
-  firestoreId?: string;
-}
+import { Priority, WorkOrderStatus, WorkOrder, InventoryItem } from './types';
 
 // --- CONSTANTS ---
 const LOCATIONS = [
@@ -77,68 +36,46 @@ export const App = () => {
   const [isTranslating, setIsTranslating] = useState(false);
   const [passcode, setPasscode] = useState('');
   const [passcodeError, setPasscodeError] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [dbError, setDbError] = useState<string | null>(null);
   
-  const [reports, setReports] = useState<WorkOrder[]>([]);
-  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
-  const [noWeddingDays, setNoWeddingDays] = useState<string[]>([]);
+  // --- LOCAL STATE ---
+  const [reports, setReports] = useState<WorkOrder[]>([
+    { id: '24001', title: 'HVAC Unit Leak', location: 'Housekeeping', system: 'HVAC', priority: 'High', status: 'IN PROGRESS', date: '2024-01-03', dueDate: '2024-01-05', resolution: '' },
+    { id: '24002', title: 'Lighting failure', location: 'Ballroom', system: 'Electrical', priority: 'Medium', status: 'PENDING', date: '2024-01-03', dueDate: '2024-01-10', resolution: '' },
+    { id: '24003', title: 'Broken Window Latch', location: 'Room 7', system: 'Carpentry/Finishes', priority: 'Low', status: 'COMPLETED', date: '2024-01-02', dueDate: '2024-01-02', resolution: 'Hardware replaced and frame re-aligned.' },
+  ]);
+
+  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([
+    { id: 'INV-001', name: 'Flush Valves', category: 'Plumbing', stock: 12, unit: 'pcs', status: 'In Stock' },
+    { id: 'INV-002', name: 'LED Bulbs 40W', category: 'Electrical', stock: 5, unit: 'boxes', status: 'Low Stock' }
+  ]);
+
+  const [noWeddingDays, setNoWeddingDays] = useState<string[]>(['2024-01-15', '2024-01-20']);
   
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingOrder, setEditingOrder] = useState<WorkOrder | null>(null);
-  
   const [aiBriefing, setAiBriefing] = useState<string | null>(null);
   const [isGeneratingBriefing, setIsGeneratingBriefing] = useState(false);
-
-  // --- FIREBASE LISTENERS ---
-  useEffect(() => {
-    const unsubReports = onSnapshot(query(collection(db, "workOrders"), orderBy("date", "desc")), 
-      (snapshot) => {
-        const data = snapshot.docs.map(doc => ({ ...doc.data(), firestoreId: doc.id })) as WorkOrder[];
-        setReports(data);
-        setIsLoading(false);
-        setDbError(null);
-      },
-      (error) => {
-        console.error("Firestore error:", error);
-        setDbError(error.message.includes("permission-denied") ? "API_DISABLED" : "CONNECTION_ERROR");
-        setIsLoading(false);
-      }
-    );
-
-    const unsubInventory = onSnapshot(collection(db, "inventory"), (snapshot) => {
-      const data = snapshot.docs.map(doc => ({ ...doc.data(), firestoreId: doc.id })) as InventoryItem[];
-      setInventoryItems(data);
-    });
-
-    const unsubSettings = onSnapshot(doc(db, "settings", "calendar"), (doc) => {
-      if (doc.exists()) setNoWeddingDays(doc.data().noWeddingDays || []);
-    });
-
-    return () => {
-      unsubReports();
-      unsubInventory();
-      unsubSettings();
-    };
-  }, []);
-
-  const unreadCount = useMemo(() => reports.filter(r => !r.viewed).length, [reports]);
-
-  const handleBriefing = async () => {
-    setIsGeneratingBriefing(true);
-    const briefing = await generateBriefing(reports);
-    setAiBriefing(briefing);
-    setIsGeneratingBriefing(false);
-  };
 
   const triggerSuccess = () => {
     setShowSuccess(true);
     setTimeout(() => setShowSuccess(false), 2000);
   };
 
-  const handleAddReport = async (data: Partial<WorkOrder>) => {
+  const handleBriefing = async () => {
+    setIsGeneratingBriefing(true);
+    try {
+      const briefing = await generateBriefing(reports);
+      setAiBriefing(briefing);
+    } catch (e) {
+      setAiBriefing("AI Assistant momentarily offline. Ensure API keys are active.");
+    } finally {
+      setIsGeneratingBriefing(false);
+    }
+  };
+
+  const handleAddReport = (data: Partial<WorkOrder>) => {
     const newId = `${24000 + reports.length + 1}`;
-    const newReport = {
+    const newReport: WorkOrder = {
       id: newId,
       title: data.title || 'Untitled',
       location: data.location || LOCATIONS[0],
@@ -147,15 +84,14 @@ export const App = () => {
       status: 'PENDING',
       date: toISODate(new Date()),
       dueDate: data.dueDate || toISODate(new Date()),
-      viewed: false, 
+      resolution: ''
     };
-    await addDoc(collection(db, "workOrders"), newReport);
+    setReports(prev => [newReport, ...prev]);
     triggerSuccess();
   };
 
-  const handleUpdateReport = async (firestoreId: string, updatedFields: Partial<WorkOrder>) => {
-    const orderDoc = doc(db, "workOrders", firestoreId);
-    await updateDoc(orderDoc, { ...updatedFields, viewed: true });
+  const handleUpdateReport = (id: string, updatedFields: Partial<WorkOrder>) => {
+    setReports(prev => prev.map(r => r.id === id ? { ...r, ...updatedFields } : r));
     triggerSuccess();
     setEditingOrder(null);
   };
@@ -174,6 +110,7 @@ export const App = () => {
     }
   };
 
+  // --- VIEWS ---
   if (view === 'landing') {
     return (
       <div className="h-full bg-[#0B1120] flex flex-col items-center justify-center p-6 text-white overflow-hidden relative">
@@ -182,7 +119,7 @@ export const App = () => {
           <div className="flex flex-col items-center gap-4">
             <div className="bg-blue-600/10 p-5 rounded-[2.5rem] border border-blue-500/20 shadow-2xl"><Building2 className="w-16 h-16 text-blue-500" /></div>
             <h1 className="text-5xl font-serif uppercase tracking-widest leading-none">Bella Cosa</h1>
-            <p className="text-[10px] font-black tracking-[0.4em] uppercase text-blue-400/60">Operations Center</p>
+            <p className="text-[10px] font-black tracking-[0.4em] uppercase text-blue-400/60">Standalone Ops Hub</p>
           </div>
           <div className="w-full space-y-4">
             <button onClick={() => setView('staff')} className="w-full bg-blue-600 rounded-[2rem] p-7 flex items-center justify-between group shadow-xl active:scale-95 transition-all">
@@ -205,9 +142,9 @@ export const App = () => {
         <button onClick={() => setView('landing')} className="flex items-center gap-2 text-slate-400 mb-8 font-black text-[10px] uppercase"><ArrowLeft className="w-5 h-5" /> Hub</button>
         <h2 className="text-4xl font-black uppercase tracking-tighter text-slate-900 mb-10">New Incident</h2>
         <div className="space-y-6 flex-1 overflow-y-auto no-scrollbar">
-          <div className="space-y-2"><label className="text-[10px] font-black uppercase text-slate-400">Description</label><textarea id="st-desc" rows={4} className="w-full p-6 rounded-[2rem] border-2 border-slate-100 bg-white font-bold" placeholder="What's wrong?" /></div>
-          <div className="space-y-2"><label className="text-[10px] font-black uppercase text-slate-400">Location</label><select id="st-loc" className="w-full p-5 rounded-[1.5rem] border-2 border-slate-100 bg-white font-bold">{LOCATIONS.map(l => <option key={l}>{l}</option>)}</select></div>
-          <div className="space-y-2"><label className="text-[10px] font-black uppercase text-slate-400">System</label><select id="st-sys" className="w-full p-5 rounded-[1.5rem] border-2 border-slate-100 bg-white font-bold">{SYSTEMS.map(s => <option key={s}>{s}</option>)}</select></div>
+          <div className="space-y-2"><label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Description</label><textarea id="st-desc" rows={4} className="w-full p-6 rounded-[2rem] border-2 border-slate-100 bg-white font-bold text-slate-700 outline-none focus:border-blue-500 transition-colors" placeholder="What needs attention?" /></div>
+          <div className="space-y-2"><label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Location</label><select id="st-loc" className="w-full p-5 rounded-[1.5rem] border-2 border-slate-100 bg-white font-bold text-slate-600 outline-none">{LOCATIONS.map(l => <option key={l}>{l}</option>)}</select></div>
+          <div className="space-y-2"><label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">System</label><select id="st-sys" className="w-full p-5 rounded-[1.5rem] border-2 border-slate-100 bg-white font-bold text-slate-600 outline-none">{SYSTEMS.map(s => <option key={s}>{s}</option>)}</select></div>
         </div>
         <button onClick={() => {
           const title = (document.getElementById('st-desc') as HTMLTextAreaElement).value;
@@ -216,8 +153,9 @@ export const App = () => {
             title,
             location: (document.getElementById('st-loc') as HTMLSelectElement).value,
             system: (document.getElementById('st-sys') as HTMLSelectElement).value
-          }).then(() => setView('landing'));
-        }} className="w-full p-7 rounded-[2rem] bg-blue-600 text-white font-black text-xl shadow-2xl active:scale-95 transition-all mt-6">Submit Report</button>
+          });
+          setView('landing');
+        }} className="w-full p-7 rounded-[2rem] bg-blue-600 text-white font-black text-xl shadow-2xl active:scale-95 transition-all mt-6 shadow-blue-500/20">Submit Report</button>
       </div>
     );
   }
@@ -228,18 +166,19 @@ export const App = () => {
         <div className="flex flex-col items-center gap-6 mb-12">
           <div className="bg-emerald-500/10 p-6 rounded-full border border-emerald-500/20"><Lock className="w-12 h-12 text-emerald-500" /></div>
           <h2 className="text-3xl font-black uppercase tracking-tighter">Security Check</h2>
+          <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">Passcode: 0612</p>
         </div>
-        <div className={`flex gap-5 mb-16 ${passcodeError ? 'animate-bounce' : ''}`}>
+        <div className={`flex gap-5 mb-16 ${passcodeError ? 'animate-shake' : ''}`}>
           {[0,1,2,3].map(i => (
-            <div key={i} className={`w-16 h-20 rounded-2xl border-2 flex items-center justify-center ${passcode.length > i ? 'bg-emerald-500 border-emerald-500' : 'bg-slate-800 border-slate-700'}`}>
+            <div key={i} className={`w-16 h-20 rounded-2xl border-2 flex items-center justify-center transition-all duration-300 ${passcode.length > i ? 'bg-emerald-500 border-emerald-500 scale-110' : 'bg-slate-800 border-slate-700'}`}>
               <div className={`w-3 h-3 rounded-full ${passcode.length > i ? 'bg-white' : 'bg-slate-700'}`}></div>
             </div>
           ))}
         </div>
         <div className="grid grid-cols-3 gap-5 max-w-xs w-full">
-          {[1,2,3,4,5,6,7,8,9].map(n => <button key={n} onClick={() => handlePasscodeEntry(n.toString())} className="h-20 bg-slate-800/40 rounded-2xl text-2xl font-black border border-slate-700/50">{n}</button>)}
+          {[1,2,3,4,5,6,7,8,9].map(n => <button key={n} onClick={() => handlePasscodeEntry(n.toString())} className="h-20 bg-slate-800/40 rounded-2xl text-2xl font-black border border-slate-700/50 active:scale-90">{n}</button>)}
           <button onClick={() => setView('landing')} className="h-20 flex items-center justify-center text-slate-500"><ArrowLeft className="w-8 h-8" /></button>
-          <button onClick={() => handlePasscodeEntry('0')} className="h-20 bg-slate-800/40 rounded-2xl text-2xl font-black border border-slate-700/50">0</button>
+          <button onClick={() => handlePasscodeEntry('0')} className="h-20 bg-slate-800/40 rounded-2xl text-2xl font-black border border-slate-700/50 active:scale-90">0</button>
           <button onClick={() => setPasscode(passcode.slice(0, -1))} className="h-20 flex items-center justify-center text-slate-500"><Delete className="w-8 h-8" /></button>
         </div>
       </div>
@@ -254,21 +193,20 @@ export const App = () => {
           <h1 className="text-2xl font-serif uppercase tracking-widest">Bella Cosa</h1>
         </div>
         <nav className="flex-1 space-y-2">
-          {[{ icon: LayoutDashboard, label: 'Work Orders', count: unreadCount }, { icon: Box, label: 'Inventory' }, { icon: CalendarDays, label: 'Calendar' }].map(item => (
+          {[{ icon: LayoutDashboard, label: 'Work Orders' }, { icon: Box, label: 'Inventory' }, { icon: CalendarDays, label: 'Calendar' }].map(item => (
             <button key={item.label} onClick={() => setActiveTab(item.label)} className={`w-full flex items-center justify-between p-4 rounded-2xl transition-all ${activeTab === item.label ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:bg-white/5'}`}>
               <div className="flex items-center gap-4"><item.icon className="w-5 h-5" /> <span className="text-[10px] font-black uppercase tracking-[0.2em]">{item.label}</span></div>
-              {item.count ? <span className="bg-rose-500 text-white text-[8px] font-black px-2 py-0.5 rounded-full">{item.count}</span> : null}
             </button>
           ))}
         </nav>
-        <button onClick={() => setView('landing')} className="p-4 text-slate-500 hover:text-rose-400 flex items-center gap-4 mt-auto border-t border-slate-800 font-black text-[10px] uppercase"><LogOut className="w-5 h-5" /> Logout</button>
+        <button onClick={() => setView('landing')} className="p-4 text-slate-500 hover:text-rose-400 flex items-center gap-4 mt-auto border-t border-slate-800 font-black text-[10px] uppercase transition-colors"><LogOut className="w-5 h-5" /> Logout</button>
       </aside>
 
       <div className="flex-1 flex flex-col h-full overflow-hidden">
         <header className="bg-white border-b border-slate-200 px-10 py-8 flex items-center justify-between shadow-sm shrink-0">
           <h2 className="text-3xl font-black uppercase tracking-tighter text-slate-900">{activeTab}</h2>
           <div className="flex gap-4">
-            <button onClick={handleBriefing} className="bg-slate-50 text-slate-900 px-6 py-4 rounded-2xl font-black text-[10px] uppercase border border-slate-200 flex items-center gap-2 hover:bg-white transition-all">
+            <button onClick={handleBriefing} disabled={isGeneratingBriefing} className="bg-slate-50 text-slate-900 px-6 py-4 rounded-2xl font-black text-[10px] uppercase border border-slate-200 flex items-center gap-2 hover:bg-white transition-all">
               {isGeneratingBriefing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4 text-blue-500" />} AI Briefing
             </button>
             <button onClick={() => setIsCreateModalOpen(true)} className="bg-blue-600 text-white px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2 shadow-xl active:scale-95 transition-all">
@@ -283,65 +221,106 @@ export const App = () => {
               <div className="bg-blue-50 p-4 rounded-3xl h-fit shrink-0"><Sparkles className="w-8 h-8 text-blue-500" /></div>
               <div className="space-y-2">
                 <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Operations Coach</p>
-                <p className="text-slate-700 font-medium leading-relaxed italic">"{aiBriefing}"</p>
-                <button onClick={() => setAiBriefing(null)} className="text-[9px] font-black text-slate-300 uppercase hover:text-slate-500">Dismiss Briefing</button>
+                <p className="text-slate-700 font-medium leading-relaxed italic text-lg">"{aiBriefing}"</p>
+                <button onClick={() => setAiBriefing(null)} className="text-[9px] font-black text-slate-300 uppercase hover:text-slate-500 transition-colors mt-2">Dismiss Briefing</button>
               </div>
             </div>
           )}
 
-          <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden text-slate-900">
-            <table className="w-full text-left">
-              <thead className="bg-slate-50/50 border-b text-[9px] font-black uppercase text-slate-400 tracking-widest"><tr><th className="px-8 py-5">Issue</th><th className="px-8 py-5">Location</th><th className="px-8 py-5">Status</th><th className="px-8 py-5"></th></tr></thead>
-              <tbody className="divide-y divide-slate-50">
-                {reports.map(r => (
-                  <tr key={r.firestoreId} onClick={() => setEditingOrder(r)} className="hover:bg-blue-50/30 transition-all cursor-pointer group">
-                    <td className="px-8 py-6"><div className="flex flex-col"><span className={`text-[10px] font-black ${!r.viewed ? 'text-rose-500' : 'text-blue-500'}`}>{r.id} {!r.viewed && '• NEW'}</span><span className="text-sm font-black uppercase">{r.title}</span></div></td>
-                    <td className="px-8 py-6 text-[10px] font-bold text-slate-500 uppercase">{r.location}</td>
-                    <td className="px-8 py-6"><span className={`px-2.5 py-1 rounded-full text-[8px] font-black uppercase ${r.status === 'COMPLETED' ? 'bg-emerald-50 text-emerald-600' : 'bg-blue-50 text-blue-600'}`}>{r.status}</span></td>
-                    <td className="px-8 py-6 text-right"><Edit3 className="w-4 h-4 text-slate-200 group-hover:text-blue-600 transition-all" /></td>
-                  </tr>
+          {activeTab === 'Work Orders' && (
+            <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden text-slate-900">
+              <table className="w-full text-left">
+                <thead className="bg-slate-50/50 border-b text-[9px] font-black uppercase text-slate-400 tracking-widest"><tr><th className="px-8 py-5">Issue</th><th className="px-8 py-5">Location</th><th className="px-8 py-5">Status</th><th className="px-8 py-5"></th></tr></thead>
+                <tbody className="divide-y divide-slate-50">
+                  {reports.map(r => (
+                    <tr key={r.id} onClick={() => setEditingOrder(r)} className="hover:bg-blue-50/30 transition-all cursor-pointer group">
+                      <td className="px-8 py-6"><div className="flex flex-col"><span className="text-[10px] font-black text-blue-500">{r.id}</span><span className="text-sm font-black uppercase text-slate-800">{r.title}</span></div></td>
+                      <td className="px-8 py-6 text-[10px] font-bold text-slate-500 uppercase">{r.location}</td>
+                      <td className="px-8 py-6"><span className={`px-3 py-1.5 rounded-full text-[8px] font-black uppercase ${r.status === 'COMPLETED' ? 'bg-emerald-50 text-emerald-600' : r.status === 'IN PROGRESS' ? 'bg-amber-50 text-amber-600' : 'bg-blue-50 text-blue-600'}`}>{r.status}</span></td>
+                      <td className="px-8 py-6 text-right"><Edit3 className="w-4 h-4 text-slate-200 group-hover:text-blue-600 transition-all" /></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {activeTab === 'Inventory' && (
+            <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden text-slate-900">
+              <table className="w-full text-left">
+                <thead className="bg-slate-50/50 border-b text-[9px] font-black uppercase text-slate-400 tracking-widest"><tr><th className="px-8 py-5">Item</th><th className="px-8 py-5">Stock</th><th className="px-8 py-5">Category</th><th className="px-8 py-5">Status</th></tr></thead>
+                <tbody className="divide-y divide-slate-50">
+                  {inventoryItems.map(i => (
+                    <tr key={i.id} className="hover:bg-slate-50 transition-all">
+                      <td className="px-8 py-6 font-black uppercase text-sm">{i.name}</td>
+                      <td className="px-8 py-6 font-bold text-slate-500">{i.stock} {i.unit}</td>
+                      <td className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">{i.category}</td>
+                      <td className="px-8 py-6"><span className={`px-3 py-1.5 rounded-full text-[8px] font-black uppercase ${i.status === 'In Stock' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>{i.status}</span></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {activeTab === 'Calendar' && (
+            <div className="bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-sm">
+              <div className="flex items-center justify-between mb-8">
+                <h3 className="text-xl font-black uppercase tracking-tighter">January 2024</h3>
+                <div className="flex gap-2">
+                  <button className="p-2 bg-slate-50 rounded-lg"><ChevronLeft className="w-4 h-4" /></button>
+                  <button className="p-2 bg-slate-50 rounded-lg"><ChevronRight className="w-4 h-4" /></button>
+                </div>
+              </div>
+              <div className="grid grid-cols-7 gap-2">
+                {['S','M','T','W','T','F','S'].map(d => <div key={d} className="text-center text-[10px] font-black text-slate-300 py-4 uppercase">{d}</div>)}
+                {Array.from({length: 31}).map((_, i) => (
+                  <div key={i} className={`h-24 border border-slate-50 rounded-2xl p-2 relative ${noWeddingDays.includes(`2024-01-${i+1 < 10 ? '0' : ''}${i+1}`) ? 'bg-emerald-50 border-emerald-100' : ''}`}>
+                    <span className="text-[10px] font-black text-slate-300">{i+1}</span>
+                    {noWeddingDays.includes(`2024-01-${i+1 < 10 ? '0' : ''}${i+1}`) && <div className="absolute bottom-2 right-2"><CheckCircle2 className="w-4 h-4 text-emerald-400" /></div>}
+                  </div>
                 ))}
-              </tbody>
-            </table>
-          </div>
+              </div>
+            </div>
+          )}
         </main>
       </div>
 
       {editingOrder && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in">
-          <div className="bg-white rounded-[3rem] w-full max-w-2xl p-12 overflow-y-auto max-h-[90vh]">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in duration-300">
+          <div className="bg-white rounded-[3rem] w-full max-w-2xl p-12 overflow-y-auto max-h-[90vh] shadow-2xl">
             <div className="flex justify-between items-start mb-10">
-              <div><span className="text-[10px] font-black text-blue-500 uppercase tracking-[0.3em]">Resolution Console</span><h2 className="text-3xl font-black uppercase tracking-tighter mt-1">{editingOrder.title}</h2></div>
+              <div><span className="text-[10px] font-black text-blue-500 uppercase tracking-[0.3em]">Resolution Console</span><h2 className="text-3xl font-black uppercase tracking-tighter mt-1 text-slate-900">{editingOrder.title}</h2></div>
               <button onClick={() => setEditingOrder(null)} className="p-3 bg-slate-50 rounded-2xl"><X className="w-6 h-6" /></button>
             </div>
             <div className="space-y-8">
-              <div className="grid grid-cols-3 gap-3">{['PENDING', 'IN PROGRESS', 'COMPLETED'].map(s => (<button key={s} onClick={() => handleUpdateReport(editingOrder.firestoreId!, { status: s as WorkOrderStatus })} className={`py-6 rounded-[1.5rem] text-[10px] font-black border-4 transition-all ${editingOrder.status === s ? 'bg-blue-600 text-white border-blue-600 shadow-xl' : 'bg-white text-slate-200 border-slate-50'}`}>{s}</button>))}</div>
+              <div className="grid grid-cols-3 gap-3">{['PENDING', 'IN PROGRESS', 'COMPLETED'].map(s => (<button key={s} onClick={() => handleUpdateReport(editingOrder.id, { status: s as WorkOrderStatus })} className={`py-6 rounded-[1.5rem] text-[10px] font-black border-4 transition-all ${editingOrder.status === s ? 'bg-blue-600 text-white border-blue-600 shadow-xl' : 'bg-white text-slate-200 border-slate-50 hover:border-slate-100'}`}>{s}</button>))}</div>
               <div className="space-y-2">
-                <div className="flex justify-between items-center"><label className="text-[10px] font-black uppercase text-slate-400">Resolution Note</label><button onClick={async () => { const text = (document.getElementById('res-note') as HTMLTextAreaElement).value; setIsTranslating(true); const t = await translateNote(text); (document.getElementById('res-note') as HTMLTextAreaElement).value = t; setIsTranslating(false); }} className="text-[9px] font-black text-blue-600 bg-blue-50 px-4 py-2 rounded-xl flex items-center gap-2">{isTranslating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Languages className="w-4 h-4" />} AI Translate</button></div>
-                <textarea id="res-note" defaultValue={editingOrder.resolution} rows={4} className="w-full p-6 bg-slate-50 rounded-[2rem] outline-none font-medium h-40" placeholder="Describe what was fixed..." />
+                <div className="flex justify-between items-center"><label className="text-[10px] font-black uppercase text-slate-400">Resolution Note</label><button onClick={async () => { const text = (document.getElementById('res-note') as HTMLTextAreaElement).value; setIsTranslating(true); const t = await translateNote(text); (document.getElementById('res-note') as HTMLTextAreaElement).value = t; setIsTranslating(false); }} className="text-[9px] font-black text-blue-600 bg-blue-50 px-4 py-2 rounded-xl flex items-center gap-2 hover:bg-blue-100 transition-colors">{isTranslating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Languages className="w-4 h-4" />} AI Translate</button></div>
+                <textarea id="res-note" defaultValue={editingOrder.resolution} rows={4} className="w-full p-6 bg-slate-50 rounded-[2rem] outline-none font-medium h-40 text-slate-700" placeholder="Describe what was fixed..." />
               </div>
-              <button onClick={() => handleUpdateReport(editingOrder.firestoreId!, { resolution: (document.getElementById('res-note') as HTMLTextAreaElement).value })} className="w-full py-7 bg-blue-600 text-white rounded-[2rem] font-black uppercase text-[12px] tracking-[0.4em] shadow-2xl active:scale-95 transition-all">Sync Changes</button>
+              <button onClick={() => handleUpdateReport(editingOrder.id, { resolution: (document.getElementById('res-note') as HTMLTextAreaElement).value })} className="w-full py-7 bg-blue-600 text-white rounded-[2rem] font-black uppercase text-[12px] tracking-[0.4em] shadow-2xl active:scale-95 transition-all">Sync Changes</button>
             </div>
           </div>
         </div>
       )}
 
       {isCreateModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in">
-          <div className="bg-white rounded-[3rem] w-full max-w-xl p-12">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in duration-300">
+          <div className="bg-white rounded-[3rem] w-full max-w-xl p-12 shadow-2xl">
             <div className="flex justify-between items-center mb-10"><h2 className="text-3xl font-black uppercase tracking-tighter">Quick Add</h2><button onClick={() => setIsCreateModalOpen(false)} className="p-3 bg-slate-50 rounded-2xl"><X className="w-6 h-6" /></button></div>
             <div className="space-y-6">
-              <input id="qa-title" placeholder="Description of issue..." className="w-full p-6 bg-slate-50 rounded-[1.5rem] border-2 border-slate-50 outline-none font-bold" />
-              <button onClick={() => { const title = (document.getElementById('qa-title') as HTMLInputElement).value; if(!title) return; handleAddReport({ title }).then(() => setIsCreateModalOpen(false)); }} className="w-full py-7 bg-blue-600 text-white rounded-[2rem] font-black uppercase text-[10px] tracking-widest shadow-2xl active:scale-95 transition-all">Create Order</button>
+              <input id="qa-title" placeholder="Description of issue..." className="w-full p-6 bg-slate-50 rounded-[1.5rem] border-2 border-slate-50 outline-none font-bold text-slate-700 focus:bg-white focus:border-blue-100 transition-all shadow-inner" />
+              <button onClick={() => { const title = (document.getElementById('qa-title') as HTMLInputElement).value; if(!title) return; handleAddReport({ title }); setIsCreateModalOpen(false); }} className="w-full py-7 bg-blue-600 text-white rounded-[2rem] font-black uppercase text-[10px] tracking-widest shadow-2xl active:scale-95 transition-all">Create Order</button>
             </div>
           </div>
         </div>
       )}
 
       {showSuccess && (
-        <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/40 backdrop-blur-md animate-in zoom-in">
-          <div className="bg-white rounded-[4rem] p-16 flex flex-col items-center gap-6 shadow-2xl animate-bounce">
-            <CheckCircle2 className="w-16 h-16 text-emerald-500" />
+        <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/40 backdrop-blur-md animate-in zoom-in duration-300">
+          <div className="bg-white rounded-[4rem] p-16 flex flex-col items-center gap-6 shadow-2xl animate-bounce border-8 border-emerald-50">
+            <CheckCircle2 className="w-20 h-20 text-emerald-500" />
             <h3 className="text-2xl font-black uppercase tracking-[0.3em] text-slate-900">Synchronized</h3>
           </div>
         </div>

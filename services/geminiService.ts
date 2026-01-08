@@ -1,7 +1,7 @@
 
 import { GoogleGenAI } from "@google/genai";
 
-// Initialize the Gemini API client
+// Initialize the Gemini API client using the mandatory environment variable
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 export const translateNote = async (text: string): Promise<string> => {
@@ -17,6 +17,7 @@ export const translateNote = async (text: string): Promise<string> => {
       }
     });
     
+    // SDK Rule: Use .text property, not .text() method
     return response.text?.trim() || text;
   } catch (error) {
     console.error("Gemini Translation error:", error);
@@ -30,7 +31,7 @@ export const generateBriefing = async (orders: any[]): Promise<string> => {
   const orderSummary = orders
     .filter(o => o.status !== 'COMPLETED')
     .map(o => `- [${o.priority}] ${o.title} at ${o.location}`)
-    .slice(0, 10) // Limit context for token efficiency
+    .slice(0, 15) // Limit context for token efficiency
     .join('\n');
   
   try {
@@ -40,13 +41,14 @@ export const generateBriefing = async (orders: any[]): Promise<string> => {
       Analyze these pending work orders and provide a short, executive daily briefing (max 3 sentences). 
       Identify critical risks or suggested priorities for the team.
       
-      Orders:\n${orderSummary}`,
+      Orders Summary:\n${orderSummary}`,
       config: {
         temperature: 0.7,
         topP: 0.9,
       }
     });
     
+    // SDK Rule: Use .text property, not .text() method
     return response.text?.trim() || "Operations appear stable. Monitor high priority infrastructure.";
   } catch (error) {
     console.error("Gemini Briefing error:", error);
